@@ -1066,6 +1066,9 @@
         ctaText.textContent = `在 ${work.platform} 打开`;
         cta.style.opacity = '';
         cta.style.pointerEvents = '';
+      } else if (work.medium === '文字') {
+        // 文字作品：不显示任何按钮，正文已在上方
+        cta.style.display = 'none';
       } else if (work.thumbnail) {
         // 无外链 + 有图：查看大图
         cta.href = work.thumbnail;
