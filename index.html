@@ -947,8 +947,19 @@
       filtered.forEach(item => {
         const card = document.createElement('a');
         card.className = 'card';
-        card.href = '#work-' + item.id;
-        
+        // 优先跳外部链接：有 url 跳作品页，无 url 有缩略图跳大图，纯文字保留详情页
+        if (item.url && item.url !== '') {
+          card.href = item.url;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+        } else if (item.thumbnail && item.thumbnail !== '') {
+          card.href = item.thumbnail;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+        } else {
+          card.href = '#work-' + item.id;
+        }
+
         const tagsHTML = item.tags.map(t => `<span class="card-tag">#${escapeHtml(t)}</span>`).join('');
         const viewCountHTML = `<span class="view-count loading" data-work-id="${item.id}"><span class="view-icon">👁</span><span class="view-num">—</span></span>`;
         const thumbHTML = item.thumbnail
