@@ -1021,7 +1021,11 @@
       
       const descEl = document.getElementById('detailDesc');
       if (work.description) {
-        descEl.textContent = work.description;
+        // 文字作品：把连续空行压缩为单个换行，避免每句之间过大空白
+        const descText = (work.medium === '文字')
+          ? work.description.replace(/\n\n+/g, '\n')
+          : work.description;
+        descEl.textContent = descText;
         descEl.classList.remove('empty-text');
         if (work.medium === '文字') {
           // 文字作品：保留换行 + 正常行距 + 可滚动
