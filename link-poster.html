@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
+<title>江涵个人作品集</title>
+
+<!-- 关键：让微信/微博/QQ 等聊天工具看到链接时显示"漂亮卡片预览" -->
+<meta property="og:title" content="江涵个人作品集">
+<meta property="og:description" content="展一己才艺　纳万象慧思">
+<meta property="og:image" content="https://jianghan-faguang-dangao.netlify.app/link-card.png">
+<meta property="og:url" content="https://jianghan-faguang-dangao.netlify.app/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; min-height: 100vh; }
+  body {
+    background: #1a1410;
+    font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+  }
+
+  /* 整张卡 = 一个超链接 */
+  a.card {
+    display: block;
+    width: 100vw;
+    min-height: 100vh;
+    background:
+      linear-gradient(180deg, rgba(20,14,8,0.4) 0%, rgba(20,14,8,0.65) 100%),
+      url('shuimo.jpg') center/cover no-repeat;
+    position: relative;
+    border: 14px solid rgba(196,144,48,0.6);
+    box-shadow:
+      inset 0 0 0 2px rgba(245,234,208,0.9),
+      inset 0 0 0 22px rgba(196,144,48,0.35);
+    overflow: hidden;
+    color: #f5ead0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  a.card:hover {
+    transform: scale(1.005);
+    box-shadow:
+      inset 0 0 0 2px rgba(255,220,140,1),
+      inset 0 0 0 22px rgba(255,200,100,0.5),
+      0 0 80px rgba(255,200,120,0.4);
+  }
+  a.card:hover .arrow {
+    transform: translateX(12px);
+    opacity: 1;
+  }
+  a.card:active {
+    transform: scale(0.998);
+  }
+
+  .top-line {
+    position: absolute;
+    top: 12%; left: 14%; right: 14%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #c49030 30%, #f5ead0 50%, #c49030 70%, transparent 100%);
+  }
+
+  .top-label {
+    position: absolute;
+    top: 14%; left: 0; right: 0;
+    text-align: center;
+    font-size: 28px;
+    color: #c49030;
+    letter-spacing: 8px;
+    text-shadow: 0 0 10px rgba(0,0,0,0.9);
+  }
+
+  .title {
+    position: absolute;
+    top: 22%; left: 0; right: 0;
+    text-align: center;
+    font-size: 280px;
+    font-weight: 700;
+    color: #f5ead0;
+    letter-spacing: 32px;
+    text-shadow:
+      0 8px 0 rgba(0,0,0,0.5),
+      0 16px 50px rgba(0,0,0,0.85),
+      0 0 80px rgba(255,200,120,0.5);
+  }
+
+  .subtitle {
+    position: absolute;
+    top: 56%; left: 0; right: 0;
+    text-align: center;
+    font-size: 56px;
+    color: #f5ead0;
+    letter-spacing: 6px;
+    text-shadow: 0 4px 16px rgba(0,0,0,0.9);
+    opacity: 0.95;
+  }
+
+  .mid-line {
+    position: absolute;
+    top: 67%; left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #c49030 50%, transparent 100%);
+  }
+
+  .arrow-row {
+    position: absolute;
+    bottom: 18%; left: 0; right: 0;
+    text-align: center;
+    font-size: 48px;
+    color: #ffd070;
+    letter-spacing: 4px;
+    text-shadow: 0 0 16px rgba(255,200,100,0.6), 0 2px 4px rgba(0,0,0,0.8);
+  }
+  .arrow {
+    display: inline-block;
+    margin-left: 16px;
+    font-size: 1.2em;
+    transition: transform 0.3s, opacity 0.3s;
+    opacity: 0.85;
+  }
+
+  .hint {
+    position: absolute;
+    bottom: 8%; left: 0; right: 0;
+    text-align: center;
+    font-size: 22px;
+    color: rgba(220,210,180,0.7);
+    letter-spacing: 4px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
+
+  .corner {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 4px solid #c49030;
+  }
+  .corner.tl { top: 6%; left: 6%; border-right: none; border-bottom: none; }
+  .corner.tr { top: 6%; right: 6%; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 6%; left: 6%; border-right: none; border-top: none; }
+  .corner.br { bottom: 6%; right: 6%; border-left: none; border-top: none; }
+</style>
+</head>
+<body>
+  <a class="card" href="https://jianghan-faguang-dangao.netlify.app" target="_self" rel="noopener">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="top-line"></div>
+    <div class="top-label">个 人 作 品 集</div>
+    <div class="title">江涵</div>
+    <div class="subtitle">展一己才艺　　纳万象慧思</div>
+    <div class="mid-line"></div>
+    <div class="arrow-row">点 击 进 入 作品集<span class="arrow">→</span></div>
+    <div class="hint">整 张 卡 片 都 是 入 口</div>
+  </a>
+</body>
+</html>
