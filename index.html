@@ -947,11 +947,17 @@
       filtered.forEach(item => {
         const card = document.createElement('a');
         card.className = 'card';
-        // 优先跳外部链接：有 url 跳作品页，无 url 有缩略图跳大图，纯文字保留详情页
+        // 跳转优先级：
+        // 1. 有外链 url → 直接跳外部平台（视频/音频/外链图片等）
+        // 2. 纯文字作品（medium==='文字'）→ 进详情页看全文（即使有缩略图）
+        // 3. 无外链但有缩略图 → 跳大图查看
+        // 4. 其他 → 进详情页
         if (item.url && item.url !== '') {
           card.href = item.url;
           card.target = '_blank';
           card.rel = 'noopener noreferrer';
+        } else if (item.medium === '文字') {
+          card.href = '#work-' + item.id;
         } else if (item.thumbnail && item.thumbnail !== '') {
           card.href = item.thumbnail;
           card.target = '_blank';
