@@ -543,7 +543,7 @@
     }
     .detail-desc.text-content {
       font-size: 16px;
-      line-height: 1.9;
+      line-height: 1.6;
       max-height: 60vh;
       overflow-y: auto;
       padding-top: 8px;
@@ -1024,7 +1024,7 @@
         descEl.textContent = work.description;
         descEl.classList.remove('empty-text');
         if (work.medium === '文字') {
-          // 文字作品：保留换行 + 加大行距 + 可滚动
+          // 文字作品：保留换行 + 正常行距 + 可滚动
           descEl.classList.add('text-content');
         } else {
           descEl.classList.remove('text-content');
