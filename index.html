@@ -187,7 +187,7 @@
     }
     .banner h1 {
       font-size: 30px;
-      margin-bottom: 18px;
+      margin-bottom: 6px;
       font-weight: 600;
       letter-spacing: 8px;
       font-family: "FangSong", "STFangsong", "FangSong_GB2312", "仿宋", serif;
@@ -203,7 +203,7 @@
       font-size: 14px;
       opacity: 0.75;
       letter-spacing: 1px;
-      margin-top: 10px;
+      margin-top: 6px;
       text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
     }
     /* ========== 顶部分区导航 ========== */
@@ -701,7 +701,7 @@
     <div class="banner" id="banner">
       <h1>江涵发光的蛋糕</h1>
       <p class="subtitle">汇一己才艺　纳万象慧思</p>
-      <p class="total-count" id="total-count">作品总数：<span id="total-num">73</span></p>
+      <p class="total-count" id="total-count">作品总数：<span id="total-num">73</span>  视频：<span id="stat-video">59</span>  音频：<span id="stat-audio">0</span>  图片：<span id="stat-image">6</span>  文字：<span id="stat-text">1</span></p>
     </div>
     
     <!-- 顶部分区导航 -->
@@ -868,8 +868,12 @@
       {"id":73,"title":"旅游_峨眉报国寺实拍","medium":"视频","platform":"视频号","url":"https://weixin.qq.com/sph/AcARl19MsM","description":"峨眉报国寺实拍留念","thumbnail":"旅游_峨眉报国寺实拍.jpg","publishDate":"2026-07-30","tags":["江涵原创","旅游","视频"],"status":"已发布"}
     ];
 
-    // === 作品总数（自动从 works.length 取，每次录新作品后刷新即更新） ===
+    // === 作品总数 + 分类统计（自动从 works.length 取，每次录新作品后刷新即更新） ===
     document.getElementById('total-num').textContent = works.length;
+    document.getElementById('stat-video').textContent = works.filter(w => w.medium === '视频').length;
+    document.getElementById('stat-audio').textContent = works.filter(w => w.medium === '音频').length;
+    document.getElementById('stat-image').textContent = works.filter(w => w.medium === '图片').length;
+    document.getElementById('stat-text').textContent = works.filter(w => w.medium === '文字').length;
 
     // === 状态 ===
     const selectedPlatforms = new Set();
