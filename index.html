@@ -4075,24 +4075,10 @@
           if (!text.includes(search)) return false;
         }
         return true;
-      });
-
-      // 按录入时间倒序排列（id 大 = 最新录入，排最上最左）
-      // 例外: 江涵指定的两个"系列"在 desc 排后保持连续
-      //   1) 街子古镇新 3 个 (id 189, 190, 194) 排在 191 之后
-      //      伪 id 190.7 / 190.5 / 190.3 (排第 4 排左中右 = 3-2-1 顺序)
-      //   2) 成都熊猫基地 5 个 (id 196, 197, 198, 199, 200) 排在 195 之后
-      //      伪 id 194.7 / 194.6 / 194.5 / 194.4 / 194.3 (排第 1-2 排 = 5-4-3-2-1 顺序跨两排)
-      //   老 id=62, 63 (workbuddy 早期录的街子系列) 不在 jieziRank, 保持原 desc 排位置
+      });      // 按录入时间倒序排列（id 大 = 最新录入，排最上最左）
+      // 系列连续: 靠 title 里的"（1）（2）..."序号标注, 不再加特殊排序 (避免数据被改)
       filtered.sort(function(a, b) {
-        const jieziRank = { 194: 190.7, 190: 190.5, 189: 190.3 };
-        const xiongmaoRank = { 200: 194.7, 199: 194.6, 198: 194.5, 197: 194.4, 196: 194.3 };
-        function getRank(id) {
-          if (jieziRank[id] != null) return jieziRank[id];
-          if (xiongmaoRank[id] != null) return xiongmaoRank[id];
-          return id || 0;
-        }
-        return getRank(b.id) - getRank(a.id);
+        return (b.id || 0) - (a.id || 0);
       });
 
       if (filtered.length === 0) {
