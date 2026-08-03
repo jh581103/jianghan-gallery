@@ -3966,8 +3966,16 @@
       });
 
       // 按录入时间倒序排列（id 大 = 最新录入，排最上最左）
+      // 例外: 江涵的"街子古镇"新 3 个 (id 189, 190, 194) 排在 id=191 之后, id=188 之前
+      //   目的: 让街子（3）（2）（1）三个 id 在 desc 排后紧挨成一行, 形成系列连续显示
+      //   伪 id 用浮点卡在 188-191 之间: 194→190.7, 190→190.5, 189→190.3
+      //   desc 排后位置 4/5/6 = 第二排左中右 = 3→2→1 顺序
+      //   老 id=62, 63 (workbuddy 早期录的街子系列) 不在 jieziRank, 保持原 desc 排位置
       filtered.sort(function(a, b) {
-        return (b.id || 0) - (a.id || 0);
+        const jieziRank = { 194: 190.7, 190: 190.5, 189: 190.3 };
+        const aid = jieziRank[a.id] != null ? jieziRank[a.id] : (a.id || 0);
+        const bid = jieziRank[b.id] != null ? jieziRank[b.id] : (b.id || 0);
+        return bid - aid;
       });
 
       if (filtered.length === 0) {
