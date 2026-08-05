@@ -4763,8 +4763,10 @@
         // 2. 纯文字作品（medium==='文字'）→ 进详情页看全文（即使有缩略图）
         // 3. 无外链但有缩略图 → 跳大图查看
         // 4. 其他 → 进详情页
-        if (item.url && item.url !== '') {
-          card.href = item.url;
+        // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
+        const externalUrl = item.externalUrl || item.url;
+        if (externalUrl && externalUrl !== '') {
+          card.href = externalUrl;
           card.target = '_blank';
           card.rel = 'noopener noreferrer';
         } else if (item.medium === '文字') {
@@ -4856,24 +4858,26 @@
       const cta = document.getElementById('detailCta');
       const ctaText = document.getElementById('detailCtaText');
       const qrBox = document.getElementById('detailQr');
+      // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
+      const workUrl = work.externalUrl || work.url;
       // 先重置 cta 显示状态（防止上一个视频号作品把 display:none 留到这里）
       cta.style.display = '';
       qrBox.style.display = 'none';
-      if (work.url && work.url !== '' && isWeixinVideoUrl(work.url) && !isMobileOrWechat()) {
+      if (workUrl && workUrl !== '' && isWeixinVideoUrl(workUrl) && !isMobileOrWechat()) {
         // 视频号链接 + 桌面浏览器：电脑只能扫码 → 显示二维码，隐藏跳转按钮
         cta.style.display = 'none';
         qrBox.style.display = '';
-        renderQrCode(work.url, 'detailQrBox');
-      } else if (work.url && work.url !== '' && isDouyinUrl(work.url)) {
+        renderQrCode(workUrl, 'detailQrBox');
+      } else if (workUrl && workUrl !== '' && isDouyinUrl(workUrl)) {
         // 抖音链接：所有平台都显示按钮
         // 手机端点按钮跳抖音 App，电脑端会跳"长按复制"页（提示用户复制到抖音 App 打开）
-        cta.href = work.url;
+        cta.href = workUrl;
         ctaText.textContent = `在 ${work.platform} 打开`;
         cta.style.opacity = '';
         cta.style.pointerEvents = '';
-      } else if (work.url && work.url !== '') {
+      } else if (workUrl && workUrl !== '') {
         // 有外链：跳外链（手机端/微信/非视频号 → 全部走按钮）
-        cta.href = work.url;
+        cta.href = workUrl;
         ctaText.textContent = `在 ${work.platform} 打开`;
         cta.style.opacity = '';
         cta.style.pointerEvents = '';
