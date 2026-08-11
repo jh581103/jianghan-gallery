@@ -843,6 +843,7 @@
       medium: "音频",
       platform: "网易云音乐",
       audioUrl: "/audio/399.mp3",
+      neteaseTrackId: "1937429297",
       duration: "35:54",
       publishDate: "2026-08-11",
       status: "已发布"
@@ -6761,14 +6762,13 @@
     let _audioBlobCache = {};
     function openAudioModal(work) {
       const c = document.getElementById('audioModalContent');
-      const src = work.audioUrl || work.url;
       const speeds = [0.75, 1, 1.25, 1.5, 2];
       const btnBase = "padding:7px 11px;border:1px solid #dcdcdc;background:#f6f7f9;border-radius:9px;cursor:pointer;font-size:13px;color:#333;line-height:1;";
       c.innerHTML = `
         <h3 style="margin:0 0 10px 0;font-size:20px;color:#222;">${escapeHtml(work.title)}</h3>
         ${work.thumbnail ? `<img src="${escapeHtml(work.thumbnail)}" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:cover;">` : ''}
         ${work.description ? `<p style="margin:0 0 14px 0;color:#555;line-height:1.6;font-size:14px;">${escapeHtml(work.description)}</p>` : ''}
-        <div id="audioLoading" style="padding:22px;text-align:center;color:#888;font-size:14px;">音频加载中…（约 17MB，首次稍慢）</div>
+        <div id="audioLoading" style="padding:22px;text-align:center;color:#888;font-size:14px;">音频加载中…</div>
         <audio id="siteAudio" controls preload="auto" style="width:100%;margin-bottom:14px;display:none;"></audio>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
           <button data-skip="-15" style="${btnBase}">« 退15秒</button>
@@ -6800,22 +6800,30 @@
           audio.currentTime = Math.min(Math.max((audio.currentTime || 0) + parseFloat(b.dataset.skip), 0), audio.duration);
         };
       });
-      if (_audioBlobCache[work.id]) {
-        // 已加载过：直接用本地 blob，可任意拖动
-        audio.src = _audioBlobCache[work.id];
-        reveal();
-      } else {
-        // 整段拉取后转 blob：本地完整缓冲，进度条必定可拖动（不依赖服务器是否支持 Range）
-        fetch(src).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).then(blob => {
+      // 兜底：桥接失败时改用网站自托管文件（已上传的 17MB）转 blob 播放
+      function loadSelfHosted() {
+        const s = work.audioUrl;
+        if (!s) { loading.textContent = '播放加载失败，请点下方「在网易云音乐打开原页面」收听'; reveal(); return; }
+        if (_audioBlobCache[work.id]) { audio.src = _audioBlobCache[work.id]; reveal(); return; }
+        fetch(s).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).then(blob => {
           const url = URL.createObjectURL(blob);
           _audioBlobCache[work.id] = url;
           audio.src = url;
           reveal();
-        }).catch(() => {
-          // 拉取失败则回退直链（可能不能拖动，但能播放）
-          audio.src = src;
-          reveal();
-        });
+        }).catch(() => { loading.textContent = '播放加载失败，请点下方「在网易云音乐打开原页面」收听'; reveal(); });
+      }
+      audio.addEventListener('error', function onErr() {
+        audio.removeEventListener('error', onErr);
+        loadSelfHosted();
+      });
+      if (work.neteaseTrackId) {
+        // 主方案：经网站桥接取网易云最新地址，零存储、进度条可拖
+        audio.src = '/netease/' + work.neteaseTrackId;
+        reveal();
+      } else if (work.audioUrl) {
+        loadSelfHosted();
+      } else {
+        reveal();
       }
       document.getElementById('audioModal').style.display = 'flex';
     }
