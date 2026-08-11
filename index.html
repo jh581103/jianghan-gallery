@@ -6759,7 +6759,6 @@
       if (/\/album/.test(url)) return `https://music.163.com/outchain/player?type=1&id=${id}&auto=1&height=90`;
       return null;
     }
-    let _audioBlobCache = {};
     function openAudioModal(work) {
       const c = document.getElementById('audioModalContent');
       const speeds = [0.75, 1, 1.25, 1.5, 2];
@@ -6800,21 +6799,19 @@
           audio.currentTime = Math.min(Math.max((audio.currentTime || 0) + parseFloat(b.dataset.skip), 0), audio.duration);
         };
       });
-      // 兜底：桥接失败时改用网站自托管文件（已上传的 17MB）转 blob 播放
-      function loadSelfHosted() {
-        const s = work.audioUrl;
-        if (!s) { loading.textContent = '播放加载失败，请点下方「在网易云音乐打开原页面」收听'; reveal(); return; }
-        if (_audioBlobCache[work.id]) { audio.src = _audioBlobCache[work.id]; reveal(); return; }
-        fetch(s).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).then(blob => {
-          const url = URL.createObjectURL(blob);
-          _audioBlobCache[work.id] = url;
-          audio.src = url;
-          reveal();
-        }).catch(() => { loading.textContent = '播放加载失败，请点下方「在网易云音乐打开原页面」收听'; reveal(); });
+      // 兜底：桥接直链签名过期时刷新一次，还不行就提示去网易云原页面
+      function fallbackToNetEase() {
+        loading.textContent = '站内播放加载失败，请点下方「在网易云音乐打开原页面」收听';
+        reveal();
       }
+      let bridgeRetry = false;
       audio.addEventListener('error', function onErr() {
-        audio.removeEventListener('error', onErr);
-        loadSelfHosted();
+        if (!bridgeRetry && work.neteaseTrackId) {
+          bridgeRetry = true;
+          audio.src = '/netease/' + work.neteaseTrackId + '?t=' + Date.now();
+          return;
+        }
+        fallbackToNetEase();
       });
       if (work.neteaseTrackId) {
         // 主方案：经网站桥接取网易云最新地址，零存储、进度条可拖
