@@ -842,6 +842,7 @@
       tags: ["爱篇", "音频", "女性"],
       medium: "音频",
       platform: "网易云音乐",
+      audioUrl: "/audio/399.mp3",
       duration: "35:54",
       publishDate: "2026-08-11",
       status: "已发布"
@@ -6758,19 +6759,49 @@
       return null;
     }
     function openAudioModal(work) {
-      const embed = getNeteaseEmbedUrl(work.url);
       const c = document.getElementById('audioModalContent');
+      const src = work.audioUrl || work.url;
+      const speeds = [0.75, 1, 1.25, 1.5, 2];
+      const btnBase = "padding:7px 11px;border:1px solid #dcdcdc;background:#f6f7f9;border-radius:9px;cursor:pointer;font-size:13px;color:#333;line-height:1;";
       c.innerHTML = `
-        <h3 style="margin:0 0 12px 0;font-size:20px;color:#222;">${escapeHtml(work.title)}</h3>
-        ${work.thumbnail ? `<img src="${escapeHtml(work.thumbnail)}" style="width:100%;border-radius:10px;margin-bottom:16px;max-height:260px;object-fit:cover;">` : ''}
-        ${work.description ? `<p style="margin:0 0 16px 0;color:#555;line-height:1.6;">${escapeHtml(work.description)}</p>` : ''}
-        ${embed ? `<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height="90" src="${embed}"></iframe>` : `<p>无法嵌入播放器，<a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer">去网易云音乐打开</a></p>`}
-        <p style="text-align:center;margin:14px 0 0 0;"><a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer" style="color:#888;font-size:13px;">打不开的点此去原页面</a></p>
+        <h3 style="margin:0 0 10px 0;font-size:20px;color:#222;">${escapeHtml(work.title)}</h3>
+        ${work.thumbnail ? `<img src="${escapeHtml(work.thumbnail)}" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:cover;">` : ''}
+        ${work.description ? `<p style="margin:0 0 14px 0;color:#555;line-height:1.6;font-size:14px;">${escapeHtml(work.description)}</p>` : ''}
+        <audio id="siteAudio" controls preload="metadata" src="${escapeHtml(src)}" style="width:100%;margin-bottom:14px;"></audio>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
+          <button data-skip="-15" style="${btnBase}">« 退15秒</button>
+          <button data-skip="15" style="${btnBase}">进15秒 »</button>
+          <span style="color:#888;font-size:13px;margin-left:auto;">语速</span>
+          <span id="speedWrap" style="display:inline-flex;gap:5px;"></span>
+        </div>
+        <p style="text-align:center;margin:12px 0 0 0;"><a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer" style="color:#888;font-size:13px;">在网易云音乐打开原页面</a></p>
       `;
+      const audio = document.getElementById('siteAudio');
+      const wrap = document.getElementById('speedWrap');
+      speeds.forEach(s => {
+        const b = document.createElement('button');
+        b.textContent = s + 'x';
+        b.dataset.speed = s;
+        b.style.cssText = btnBase + (s === 1 ? 'background:#e8f0fe;border-color:#4a90e2;color:#1a73e8;font-weight:600;' : '');
+        b.onclick = () => {
+          audio.playbackRate = s;
+          wrap.querySelectorAll('button').forEach(x => { x.style.background = '#f6f7f9'; x.style.borderColor = '#dcdcdc'; x.style.color = '#333'; x.style.fontWeight = '400'; });
+          b.style.background = '#e8f0fe'; b.style.borderColor = '#4a90e2'; b.style.color = '#1a73e8'; b.style.fontWeight = '600';
+        };
+        wrap.appendChild(b);
+      });
+      c.querySelectorAll('button[data-skip]').forEach(b => {
+        b.onclick = () => {
+          if (!audio.duration) return;
+          audio.currentTime = Math.min(Math.max((audio.currentTime || 0) + parseFloat(b.dataset.skip), 0), audio.duration);
+        };
+      });
       document.getElementById('audioModal').style.display = 'flex';
     }
     function closeAudioModal() {
       document.getElementById('audioModal').style.display = 'none';
+      const a = document.getElementById('siteAudio');
+      if (a) { try { a.pause(); } catch(e){} }
       document.getElementById('audioModalContent').innerHTML = '';
     }
     const audioModalEl = document.getElementById('audioModal');
@@ -6830,10 +6861,19 @@
         // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
         const externalUrl = item.externalUrl || item.url;
         if (item.medium === '音频') {
-          // 音频直接跳网易云页面（微信里内嵌 iframe 加载受限，直接外链最稳）
-          card.href = externalUrl;
-          card.target = '_blank';
-          card.rel = 'noopener noreferrer';
+          if (item.audioUrl && item.audioUrl !== '') {
+            // 站内播放器：可拖动进度条 + 快进快退 + 调速（同源，微信里也能放）
+            card.href = 'javascript:void(0)';
+            card.addEventListener('click', (e) => {
+              e.preventDefault();
+              openAudioModal(item);
+            });
+          } else {
+            // 没有站内音频源，跳网易云页面
+            card.href = externalUrl;
+            card.target = '_blank';
+            card.rel = 'noopener noreferrer';
+          }
         } else if (externalUrl && externalUrl !== '') {
           card.href = externalUrl;
           card.target = '_blank';
