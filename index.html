@@ -6890,10 +6890,12 @@
         // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
         const externalUrl = item.externalUrl || item.url;
         if (item.medium === '音频') {
-          // 直接跳网易云收听（最省网站容量；网易云播放器自带可拖动进度条）
-          card.href = externalUrl;
-          card.target = '_blank';
-          card.rel = 'noopener noreferrer';
+          // 站内播放器桥接网易云直链：零存储、进度条可拖动
+          card.href = 'javascript:void(0)';
+          card.addEventListener('click', e => {
+            e.preventDefault();
+            openAudioModal(item);
+          });
         } else if (externalUrl && externalUrl !== '') {
           card.href = externalUrl;
           card.target = '_blank';
