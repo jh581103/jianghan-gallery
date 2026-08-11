@@ -6758,6 +6758,7 @@
       if (/\/album/.test(url)) return `https://music.163.com/outchain/player?type=1&id=${id}&auto=1&height=90`;
       return null;
     }
+    let _audioBlobCache = {};
     function openAudioModal(work) {
       const c = document.getElementById('audioModalContent');
       const src = work.audioUrl || work.url;
@@ -6767,7 +6768,8 @@
         <h3 style="margin:0 0 10px 0;font-size:20px;color:#222;">${escapeHtml(work.title)}</h3>
         ${work.thumbnail ? `<img src="${escapeHtml(work.thumbnail)}" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:cover;">` : ''}
         ${work.description ? `<p style="margin:0 0 14px 0;color:#555;line-height:1.6;font-size:14px;">${escapeHtml(work.description)}</p>` : ''}
-        <audio id="siteAudio" controls preload="metadata" src="${escapeHtml(src)}" style="width:100%;margin-bottom:14px;"></audio>
+        <div id="audioLoading" style="padding:22px;text-align:center;color:#888;font-size:14px;">音频加载中…（约 17MB，首次稍慢）</div>
+        <audio id="siteAudio" controls preload="auto" style="width:100%;margin-bottom:14px;display:none;"></audio>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
           <button data-skip="-15" style="${btnBase}">« 退15秒</button>
           <button data-skip="15" style="${btnBase}">进15秒 »</button>
@@ -6777,7 +6779,9 @@
         <p style="text-align:center;margin:12px 0 0 0;"><a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer" style="color:#888;font-size:13px;">在网易云音乐打开原页面</a></p>
       `;
       const audio = document.getElementById('siteAudio');
+      const loading = document.getElementById('audioLoading');
       const wrap = document.getElementById('speedWrap');
+      const reveal = () => { loading.style.display = 'none'; audio.style.display = 'block'; };
       speeds.forEach(s => {
         const b = document.createElement('button');
         b.textContent = s + 'x';
@@ -6796,6 +6800,23 @@
           audio.currentTime = Math.min(Math.max((audio.currentTime || 0) + parseFloat(b.dataset.skip), 0), audio.duration);
         };
       });
+      if (_audioBlobCache[work.id]) {
+        // 已加载过：直接用本地 blob，可任意拖动
+        audio.src = _audioBlobCache[work.id];
+        reveal();
+      } else {
+        // 整段拉取后转 blob：本地完整缓冲，进度条必定可拖动（不依赖服务器是否支持 Range）
+        fetch(src).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).then(blob => {
+          const url = URL.createObjectURL(blob);
+          _audioBlobCache[work.id] = url;
+          audio.src = url;
+          reveal();
+        }).catch(() => {
+          // 拉取失败则回退直链（可能不能拖动，但能播放）
+          audio.src = src;
+          reveal();
+        });
+      }
       document.getElementById('audioModal').style.display = 'flex';
     }
     function closeAudioModal() {
