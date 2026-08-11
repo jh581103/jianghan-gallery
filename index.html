@@ -842,6 +842,7 @@
       tags: ["爱篇", "音频", "女性"],
       medium: "音频",
       platform: "网易云音乐",
+      duration: "35:54",
       publishDate: "2026-08-11",
       status: "已发布"
     },
@@ -6829,13 +6830,10 @@
         // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
         const externalUrl = item.externalUrl || item.url;
         if (item.medium === '音频') {
-          // 音频用站内浮层打开网易云外链播放器（height=90 带进度条、时间显示）
-          card.href = 'javascript:void(0)';
-          card.addEventListener('click', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            openAudioModal(item);
-          });
+          // 音频直接跳网易云页面（微信里内嵌 iframe 加载受限，直接外链最稳）
+          card.href = externalUrl;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
         } else if (externalUrl && externalUrl !== '') {
           card.href = externalUrl;
           card.target = '_blank';
@@ -6855,7 +6853,7 @@
         const isAudio = item.medium === '音频';
         const thumbHTML = item.thumbnail
           ? (isAudio
-              ? `<div class="card-thumb" style="position:relative;"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;bottom:6px;right:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);border-radius:50%;color:#fff;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,0.4);box-shadow:0 1px 4px rgba(0,0,0,0.2);">▶</div></div>`
+              ? `<div class="card-thumb" style="position:relative;"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;">${item.duration ? `<div style="position:absolute;bottom:6px;left:6px;padding:2px 6px;background:rgba(0,0,0,0.55);border-radius:4px;color:#fff;font-size:11px;line-height:1.4;text-shadow:0 1px 2px rgba(0,0,0,0.4);">${escapeHtml(item.duration)}</div>` : ''}<div style="position:absolute;bottom:6px;right:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);border-radius:50%;color:#fff;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,0.4);box-shadow:0 1px 4px rgba(0,0,0,0.2);">▶</div></div>`
               : `<img src="${escapeHtml(item.thumbnail)}" class="card-thumb" style="object-fit:cover;">`)
           : `<div class="card-thumb">${escapeHtml(item.medium)} · ${escapeHtml(item.platform)}</div>`;
 
