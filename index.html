@@ -689,6 +689,14 @@
   </style>
 </head>
 <body>
+<!-- 音频播放浮层 -->
+<div id="audioModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+  <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:24px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <button onclick="closeAudioModal()" style="position:absolute;top:10px;right:12px;font-size:28px;border:none;background:none;cursor:pointer;line-height:1;color:#666;">&times;</button>
+    <div id="audioModalContent"></div>
+  </div>
+</div>
+
 
   <!-- ========== 背景层 ========== -->
   <div class="bg-image"></div>
@@ -6751,9 +6759,12 @@
       document.getElementById('audioModal').style.display = 'none';
       document.getElementById('audioModalContent').innerHTML = '';
     }
-    document.getElementById('audioModal').addEventListener('click', e => {
-      if (e.target.id === 'audioModal') closeAudioModal();
-    });
+    const audioModalEl = document.getElementById('audioModal');
+    if (audioModalEl) {
+      audioModalEl.addEventListener('click', e => {
+        if (e.target.id === 'audioModal') closeAudioModal();
+      });
+    }
 
     // === 渲染首页作品流 ===
     function renderGallery() {
@@ -7128,12 +7139,5 @@
   </script>
   
 
-<!-- 音频播放浮层 -->
-<div id="audioModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
-  <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:24px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-    <button onclick="closeAudioModal()" style="position:absolute;top:10px;right:12px;font-size:28px;border:none;background:none;cursor:pointer;line-height:1;color:#666;">&times;</button>
-    <div id="audioModalContent"></div>
-  </div>
-</div>
 </body>
 </html>
