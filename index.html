@@ -813,6 +813,18 @@
     // === Mock 数据（之后从飞书多维表格拉）===
     const works = 
                                                                                                                                                                                           [
+    {
+      id: 399,
+      title: "岩中花述1：听见另外的成熟女性",
+      thumbnail: "thumbnails/岩中花述1：听见另外的成熟女性.jpg",
+      description: "GIADA x Tatler 播客《岩中花述》Ep0：在标签之外，听见另外的成熟女性。",
+      url: "https://y.music.163.com/m/program?id=2501734498&uct2=EGfrIxN8GtxID%2FlpOY%2B4Mg%3D%3D&djId=7798436575&app_version=9.5.61",
+      tags: ["江涵原创", "爱篇", "音频"],
+      medium: "音频",
+      platform: "网易云音乐",
+      publishDate: "2026-08-11",
+      status: "已发布"
+    },
 
     {
       id: 398,
@@ -6711,6 +6723,38 @@
       }[c]));
     }
     
+
+    // === 音频浮层 ===
+    function getNeteaseEmbedUrl(url) {
+      const m = url.match(/[?&]id=(\d+)/);
+      if (!m) return null;
+      const id = m[1];
+      if (/\/(program|dj)/.test(url)) return `https://music.163.com/outchain/player?type=4&id=${id}&auto=0&height=86`;
+      if (/\/song/.test(url)) return `https://music.163.com/outchain/player?type=2&id=${id}&auto=0&height=66`;
+      if (/\/playlist/.test(url)) return `https://music.163.com/outchain/player?type=0&id=${id}&auto=0&height=90`;
+      if (/\/album/.test(url)) return `https://music.163.com/outchain/player?type=1&id=${id}&auto=0&height=90`;
+      return null;
+    }
+    function openAudioModal(work) {
+      const embed = getNeteaseEmbedUrl(work.url);
+      const c = document.getElementById('audioModalContent');
+      c.innerHTML = `
+        <h3 style="margin:0 0 12px 0;font-size:20px;color:#222;">${escapeHtml(work.title)}</h3>
+        ${work.thumbnail ? `<img src="${escapeHtml(work.thumbnail)}" style="width:100%;border-radius:10px;margin-bottom:16px;max-height:260px;object-fit:cover;">` : ''}
+        ${work.description ? `<p style="margin:0 0 16px 0;color:#555;line-height:1.6;">${escapeHtml(work.description)}</p>` : ''}
+        ${embed ? `<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height="86" src="${embed}"></iframe>` : `<p>无法嵌入播放器，<a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer">去网易云音乐打开</a></p>`}
+        <p style="text-align:center;margin:14px 0 0 0;"><a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer" style="color:#888;font-size:13px;">打不开的点此去原页面</a></p>
+      `;
+      document.getElementById('audioModal').style.display = 'flex';
+    }
+    function closeAudioModal() {
+      document.getElementById('audioModal').style.display = 'none';
+      document.getElementById('audioModalContent').innerHTML = '';
+    }
+    document.getElementById('audioModal').addEventListener('click', e => {
+      if (e.target.id === 'audioModal') closeAudioModal();
+    });
+
     // === 渲染首页作品流 ===
     function renderGallery() {
       const search = document.getElementById('searchBox').value.toLowerCase().trim();
@@ -6761,7 +6805,12 @@
         // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
         const externalUrl = item.externalUrl || item.url;
         if (item.medium === '音频') {
-          card.href = '#work-' + item.id;
+          card.href = 'javascript:void(0)';
+          card.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            openAudioModal(item);
+          });
         } else if (externalUrl && externalUrl !== '') {
           card.href = externalUrl;
           card.target = '_blank';
@@ -6778,8 +6827,11 @@
 
         const tagsHTML = item.tags.map(t => `<span class="card-tag">#${escapeHtml(t)}</span>`).join('');
         const viewCountHTML = `<span class="view-count loading" data-work-id="${item.id}"><span class="view-icon">👁</span><span class="view-num">—</span></span>`;
+        const isAudio = item.medium === '音频';
         const thumbHTML = item.thumbnail
-          ? `<img src="${escapeHtml(item.thumbnail)}" class="card-thumb" style="object-fit:cover;">`
+          ? (isAudio
+              ? `<div class="card-thumb" style="position:relative;"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.25);color:#fff;font-size:40px;text-shadow:0 2px 8px rgba(0,0,0,0.4);">▶</div></div>`
+              : `<img src="${escapeHtml(item.thumbnail)}" class="card-thumb" style="object-fit:cover;">`)
           : `<div class="card-thumb">${escapeHtml(item.medium)} · ${escapeHtml(item.platform)}</div>`;
 
         card.innerHTML = `
@@ -7075,5 +7127,13 @@
     handleHash();
   </script>
   
+
+<!-- 音频播放浮层 -->
+<div id="audioModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+  <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:24px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <button onclick="closeAudioModal()" style="position:absolute;top:10px;right:12px;font-size:28px;border:none;background:none;cursor:pointer;line-height:1;color:#666;">&times;</button>
+    <div id="audioModalContent"></div>
+  </div>
+</div>
 </body>
 </html>
