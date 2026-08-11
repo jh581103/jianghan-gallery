@@ -6816,12 +6816,10 @@
         // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
         const externalUrl = item.externalUrl || item.url;
         if (item.medium === '音频') {
-          card.href = 'javascript:void(0)';
-          card.addEventListener('click', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            openAudioModal(item);
-          });
+          // 音频直接跳网易云页面（微信内嵌播放器常无法播放，直接外链最稳，点一次即进入）
+          card.href = externalUrl;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
         } else if (externalUrl && externalUrl !== '') {
           card.href = externalUrl;
           card.target = '_blank';
