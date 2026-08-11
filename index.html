@@ -6750,7 +6750,7 @@
       const m = url.match(/[?&]id=(\d+)/);
       if (!m) return null;
       const id = m[1];
-      if (/\/(program|dj)/.test(url)) return `https://music.163.com/outchain/player?type=4&id=${id}&auto=1&height=86`;
+      if (/\/(program|dj)/.test(url)) return `https://music.163.com/outchain/player?type=4&id=${id}&auto=1&height=90`;
       if (/\/song/.test(url)) return `https://music.163.com/outchain/player?type=2&id=${id}&auto=1&height=66`;
       if (/\/playlist/.test(url)) return `https://music.163.com/outchain/player?type=0&id=${id}&auto=1&height=90`;
       if (/\/album/.test(url)) return `https://music.163.com/outchain/player?type=1&id=${id}&auto=1&height=90`;
@@ -6763,7 +6763,7 @@
         <h3 style="margin:0 0 12px 0;font-size:20px;color:#222;">${escapeHtml(work.title)}</h3>
         ${work.thumbnail ? `<img src="${escapeHtml(work.thumbnail)}" style="width:100%;border-radius:10px;margin-bottom:16px;max-height:260px;object-fit:cover;">` : ''}
         ${work.description ? `<p style="margin:0 0 16px 0;color:#555;line-height:1.6;">${escapeHtml(work.description)}</p>` : ''}
-        ${embed ? `<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height="86" src="${embed}"></iframe>` : `<p>无法嵌入播放器，<a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer">去网易云音乐打开</a></p>`}
+        ${embed ? `<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height="90" src="${embed}"></iframe>` : `<p>无法嵌入播放器，<a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer">去网易云音乐打开</a></p>`}
         <p style="text-align:center;margin:14px 0 0 0;"><a href="${escapeHtml(work.url)}" target="_blank" rel="noopener noreferrer" style="color:#888;font-size:13px;">打不开的点此去原页面</a></p>
       `;
       document.getElementById('audioModal').style.display = 'flex';
@@ -6829,10 +6829,13 @@
         // 兼容两种字段名：老的 url (workbuddy 时代) + 新的 externalUrl (Mavis 录作品)
         const externalUrl = item.externalUrl || item.url;
         if (item.medium === '音频') {
-          // 音频直接跳网易云页面（微信内嵌播放器常无法播放，直接外链最稳，点一次即进入）
-          card.href = externalUrl;
-          card.target = '_blank';
-          card.rel = 'noopener noreferrer';
+          // 音频用站内浮层打开网易云外链播放器（height=90 带进度条、时间显示）
+          card.href = 'javascript:void(0)';
+          card.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            openAudioModal(item);
+          });
         } else if (externalUrl && externalUrl !== '') {
           card.href = externalUrl;
           card.target = '_blank';
