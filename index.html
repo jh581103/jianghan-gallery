@@ -266,7 +266,7 @@
       max-width: 1200px;
       margin: -4px auto 10px;
       padding: 0 12px;
-      display: flex;
+      display: none;
       justify-content: flex-end;
       position: relative;
       z-index: 4;
@@ -6900,6 +6900,8 @@
     function applySection(section, pushUrl, focusNav) {
       if (!sectionMap[section]) section = 'all';
       currentSection = section;
+      const copyBar = document.querySelector('.share-cat-bar');
+      if (copyBar) copyBar.style.display = (section === 'all') ? 'none' : 'flex';
       document.querySelectorAll('.section-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.section === section);
       });
@@ -7381,14 +7383,8 @@
 
     // === 初始化 ===
     const _cat = new URLSearchParams(location.search).get('cat');
-    if (_cat && sectionMap[_cat] && _cat !== 'all') {
-      // 带 ?cat= 的分享链接：自动只显示该类目，并聚焦为"仅这一类"视图
-      applySection(_cat, false, true);
-    } else {
-      updateSectionNote();
-      updateSubsection();
-      renderGallery();
-    }
+    const isSharedCat = !!(_cat && _cat !== 'all' && sectionMap[_cat]);
+    applySection(_cat || 'all', false, isSharedCat);
     setupViewCount();
     handleHash();
 
