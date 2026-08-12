@@ -18,18 +18,25 @@ export async function onRequest(context) {
     return new Response('asset fetch error: ' + (e.message || 'unknown'), { status: 502 });
   }
 
-  // 没有 cat 或 "全部" 时直接返回原页面（不加改写，保持缓存策略）
-  if (!cat || cat === 'all') {
-    return response;
-  }
-
   // 有效大类目白名单（与 index.html 中的 sectionMap 对齐）
   const validCats = [
     '国学经典','乐器习作','书画练笔','歌唱声韵','诵读声韵','哲思',
     '江涵原创','伴奏','爱篇分赏','日常','旅游','美食','养生','AI制作','读悟','常识'
   ];
-  if (!validCats.includes(cat)) {
-    return response;
+
+  // 默认（无 cat / 全部 / 非法类目）直接返回原页面，但强制 no-store，
+  // 防止微信/浏览器长期缓存旧 HTML（导致旧 JS 一直生效、播放器修不好）
+  const noStoreHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  };
+  const returnNoStore = () => new Response(response.body, {
+    status: response.status,
+    headers: { ...Object.fromEntries(response.headers), ...noStoreHeaders },
+  });
+  if (!cat || cat === 'all' || !validCats.includes(cat)) {
+    return returnNoStore();
   }
 
   const title = '江涵发光的蛋糕 — ' + cat;
