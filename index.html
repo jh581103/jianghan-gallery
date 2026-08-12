@@ -260,6 +260,34 @@
       font-weight: 600;
       box-shadow: 0 4px 12px rgba(196, 144, 48, 0.4);
     }
+
+    /* 复制本类链接按钮 */
+    .share-cat-bar {
+      max-width: 1200px;
+      margin: -4px auto 10px;
+      padding: 0 12px;
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
+      z-index: 4;
+    }
+    .share-cat-bar button {
+      background: rgba(196, 144, 48, 0.22);
+      border: 1px solid #c49030;
+      color: #f5ead0;
+      padding: 6px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: all 0.2s;
+    }
+    .share-cat-bar button:hover {
+      background: rgba(196, 144, 48, 0.38);
+      border-color: #f5ead0;
+    }
     
     /* ========== 子分类导航 ========== */
     .subsection-nav {
@@ -743,6 +771,7 @@
       <button class="section-btn" data-section="读悟">📜 读悟</button>
           <button class="section-btn" data-section="常识">常识</button>
     </nav>
+    <div class="share-cat-bar"><button id="copyCatLink">🔗 复制本类链接</button></div>
     
     <!-- 子分类导航（仅特定分区显示） -->
     <nav class="subsection-nav" id="subsectionNav" style="display:none;"></nav>
@@ -6865,6 +6894,35 @@
       }
     }
     
+    // === 应用某个分区（点选 / 分享链接共用） ===
+    // pushUrl: 是否把 ?cat= 写入网址（点选时写，便于分享）
+    // focusNav: 分享场景下聚焦——只保留"全部"与当前类目，呈现"仅这一类"的干净视图
+    function applySection(section, pushUrl, focusNav) {
+      if (!sectionMap[section]) section = 'all';
+      currentSection = section;
+      document.querySelectorAll('.section-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.section === section);
+      });
+      if (focusNav && section !== 'all') {
+        document.querySelectorAll('.section-btn').forEach(b => {
+          const s = b.dataset.section;
+          b.style.display = (s === 'all' || s === section) ? '' : 'none';
+        });
+      } else {
+        document.querySelectorAll('.section-btn').forEach(b => { b.style.display = ''; });
+      }
+      document.title = (section === 'all') ? '江涵发光的蛋糕 — 个人作品集' : '江涵发光的蛋糕 — ' + section;
+      updateSectionNote();
+      updateSubsection();
+      renderGallery();
+      if (pushUrl) {
+        const u = new URL(location.href);
+        if (section === 'all') u.searchParams.delete('cat');
+        else u.searchParams.set('cat', section);
+        history.replaceState(null, '', u);
+      }
+    }
+
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -7257,12 +7315,7 @@
     // === 顶部分区导航 ===
     document.getElementById('sectionNav').addEventListener('click', e => {
       if (e.target.classList.contains('section-btn')) {
-        currentSection = e.target.dataset.section;
-        document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        updateSectionNote();
-        updateSubsection();
-        renderGallery();
+        applySection(e.target.dataset.section, true, false);
       }
     });
     
@@ -7327,11 +7380,39 @@
     }
 
     // === 初始化 ===
-    updateSectionNote();
-    updateSubsection();
-    renderGallery();
+    const _cat = new URLSearchParams(location.search).get('cat');
+    if (_cat && sectionMap[_cat] && _cat !== 'all') {
+      // 带 ?cat= 的分享链接：自动只显示该类目，并聚焦为"仅这一类"视图
+      applySection(_cat, false, true);
+    } else {
+      updateSectionNote();
+      updateSubsection();
+      renderGallery();
+    }
     setupViewCount();
     handleHash();
+
+    // === 复制"本类链接"按钮：把带 ?cat= 的链接复制到剪贴板，方便分享给朋友/朋友圈 ===
+    const copyCatBtn = document.getElementById('copyCatLink');
+    if (copyCatBtn) {
+      copyCatBtn.addEventListener('click', () => {
+        const u = new URL(location.href);
+        if (currentSection !== 'all') u.searchParams.set('cat', currentSection);
+        else u.searchParams.delete('cat');
+        const link = u.toString();
+        const ok = () => { copyCatBtn.textContent = '✅ 已复制，去分享'; setTimeout(() => copyCatBtn.textContent = '🔗 复制本类链接', 1800); };
+        const fallback = () => {
+          const ta = document.createElement('textarea');
+          ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); ok(); } catch (e) { alert('复制失败，链接如下：\n' + link); }
+          document.body.removeChild(ta);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link).then(ok).catch(fallback);
+        } else { fallback(); }
+      });
+    }
   </script>
   
 
