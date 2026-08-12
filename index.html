@@ -6965,7 +6965,7 @@
         if (watchdogFired) return;
         watchdogFired = true;
         showLoading('加载较慢，正在重试…');
-        audio.src = '/netease/' + work.neteaseTrackId + '?t=' + Date.now();
+        audio.src = '/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now();
         audio.load();
         audio.play().catch(function(){});
         setTimeout(() => { if (loading.style.display !== 'none') fallbackToNetEase(); }, 15000);
@@ -6981,7 +6981,7 @@
       audio.addEventListener('error', function onErr() {
         if (!bridgeRetry && work.neteaseTrackId) {
           bridgeRetry = true;
-          audio.src = '/netease/' + work.neteaseTrackId + '?t=' + Date.now();
+          audio.src = '/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now();
           audio.load();
           audio.play().catch(function(){});
           return;
@@ -6992,7 +6992,7 @@
       if (work.neteaseTrackId) {
         // 主方案：经网站桥接取网易云最新地址，零存储、进度条可拖
         // 加 ?t= 时间戳防浏览器缓存到旧版 302 跳转（否则会被网易云 CDN 的 Referer 校验拦截）
-        audio.src = '/netease/' + work.neteaseTrackId + '?t=' + Date.now();
+        audio.src = '/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now();
         audio.load();
         // 在用户手势(点击卡片)内尝试自动播放；被微信拦截则用户点原生控件播放
         audio.play().catch(function(){});

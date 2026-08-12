@@ -1,8 +1,10 @@
 export async function onRequest(context) {
-  const id = context.params && context.params.id;
+  let id = context.params && context.params.id;
   if (!id) {
     return new Response('missing id', { status: 400 });
   }
+  // 兼容 /netease/123.mp3 形式（让微信 X5 内核识别为 mp3 文件，提高可播性）
+  id = String(id).replace(/\.mp3$/i, '');
   const target = 'https://music.163.com/song/media/outer/url?id=' + encodeURIComponent(id) + '.mp3';
   const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
   const ref = 'https://music.163.com/';
