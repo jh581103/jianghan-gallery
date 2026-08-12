@@ -38,7 +38,9 @@ export async function onRequest(context) {
   const out = {
     'Content-Type': audio.headers.get('Content-Type') || 'audio/mpeg',
     'Access-Control-Allow-Origin': '*',
-    'Cache-Control': 'no-store',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
   };
   for (const h of ['Accept-Ranges', 'Content-Length', 'Content-Range', 'Content-Encoding', 'ETag', 'Last-Modified']) {
     const v = audio.headers.get(h);

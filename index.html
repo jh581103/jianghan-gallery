@@ -6879,7 +6879,8 @@
       });
       if (work.neteaseTrackId) {
         // 主方案：经网站桥接取网易云最新地址，零存储、进度条可拖
-        audio.src = '/netease/' + work.neteaseTrackId;
+        // 加 ?t= 时间戳防浏览器缓存到旧版 302 跳转（否则会被网易云 CDN 的 Referer 校验拦截）
+        audio.src = '/netease/' + work.neteaseTrackId + '?t=' + Date.now();
         reveal();
       } else if (work.audioUrl) {
         loadSelfHosted();
