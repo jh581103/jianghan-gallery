@@ -4,36 +4,45 @@ export async function onRequest(context) {
     return new Response('missing id', { status: 400 });
   }
   const target = 'https://music.163.com/song/media/outer/url?id=' + encodeURIComponent(id) + '.mp3';
+  const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+  const ref = 'https://music.163.com/';
+
+  // 1) 先用 HEAD 取网易云外层 302 的真实 CDN 地址
   let upstream;
   try {
-    // 用 HEAD + 手动跟随 302，避免在服务端下载整个音频文件，只取最终 CDN 地址
     upstream = await fetch(target, {
       method: 'HEAD',
       redirect: 'manual',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
-        'Referer': 'https://music.163.com/',
-      },
+      headers: { 'User-Agent': ua, 'Referer': ref },
     });
   } catch (e) {
     return new Response('upstream error: ' + (e && e.message ? e.message : 'unknown'), { status: 502 });
   }
-  // NetEase 外层返回 302 Location，直接提取最终 CDN 地址
   let finalUrl = upstream.headers.get('Location');
   if (!finalUrl) {
     return new Response('missing Location header', { status: 502 });
   }
-  if (!finalUrl || finalUrl.indexOf('music.126.net') === -1) {
-    return new Response('unexpected upstream url', { status: 502 });
-  }
-  // NetEase 返回的是 http，改写为 https，避免混合内容被浏览器拦截
   const httpsUrl = finalUrl.startsWith('http://') ? 'https://' + finalUrl.slice(7) : finalUrl;
-  return new Response(null, {
-    status: 302,
-    headers: {
-      'Location': httpsUrl,
-      'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': '*',
-    },
-  });
+
+  // 2) 同域代理：浏览器只跟本站通信，本站带正确 Referer 去网易云拉流再回传，
+  //    彻底绕开浏览器直连 CDN 时的 Referer/跨域校验；透传 Range 使进度条可拖。
+  const range = context.request.headers.get('Range');
+  const reqHeaders = { 'User-Agent': ua, 'Referer': ref };
+  if (range) reqHeaders['Range'] = range;
+  let audio;
+  try {
+    audio = await fetch(httpsUrl, { headers: reqHeaders, redirect: 'follow' });
+  } catch (e) {
+    return new Response('audio fetch error: ' + (e && e.message ? e.message : 'unknown'), { status: 502 });
+  }
+  const out = {
+    'Content-Type': audio.headers.get('Content-Type') || 'audio/mpeg',
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': 'no-store',
+  };
+  for (const h of ['Accept-Ranges', 'Content-Length', 'Content-Range', 'Content-Encoding', 'ETag', 'Last-Modified']) {
+    const v = audio.headers.get(h);
+    if (v) out[h] = v;
+  }
+  return new Response(audio.body, { status: audio.status, headers: out });
 }
