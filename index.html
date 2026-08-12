@@ -6955,47 +6955,52 @@
       // 状态可视化：音频控件常显，加载态用文字提示，便于微信/手机端诊断
       function hideLoading() { loading.style.display = 'none'; }
       function showLoading(msg) { loading.style.display = 'block'; loading.textContent = msg; }
-      // 兜底：桥接直链签名过期/不可播时提示去网易云原页面
-      function fallbackToNetEase() {
-        showLoading('站内播放在此环境暂不可用，请点下方「在网易云音乐打开原页面」收听');
+      // 兜底：提示去网易云原页面，并带上错误码便于定位
+      function fallbackToNetEase(errCode) {
+        const extra = (errCode !== undefined && errCode !== null) ? '（错误码 ' + errCode + '）' : '';
+        showLoading('站内播放在此环境暂不可用' + extra + '，请点下方「在网易云音乐打开原页面」收听');
       }
-      // 加载超时看门狗：微信下若长时间无进展，自动换时间戳重试一次，仍不行则回退
-      let watchdogFired = false;
-      const watchdog = setTimeout(() => {
-        if (watchdogFired) return;
-        watchdogFired = true;
-        showLoading('加载较慢，正在重试…');
-        audio.src = '/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now();
-        audio.load();
-        audio.play().catch(function(){});
-        setTimeout(() => { if (loading.style.display !== 'none') fallbackToNetEase(); }, 15000);
-      }, 8000);
+      // 通过网站桥接把音频先拉到本地，转成 blob 链接再交给播放器。
+      // 播放器读的是本地文件，彻底绕开微信 X5 对"代理 URL 流式音频"的兼容问题；仍零存储、不落盘。
+      let blobUrl = null;
+      let watchdog = null;
+      function startWatchdog() {
+        clearTimeout(watchdog);
+        watchdog = setTimeout(function () {
+          if (loading.style.display !== 'none') fallbackToNetEase();
+        }, 25000);
+      }
+      function loadViaBridge() {
+        showLoading('正在下载音频（约 34MB，请稍候）…');
+        fetch('/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now())
+          .then(function (resp) {
+            if (!resp.ok) throw new Error('http ' + resp.status);
+            return resp.blob();
+          })
+          .then(function (blob) {
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+            blobUrl = URL.createObjectURL(blob);
+            audio.src = blobUrl;
+            audio.load();
+            startWatchdog();
+            // 在用户手势(点击卡片)内尝试自动播放；被微信拦截则用户点原生控件播放
+            audio.play().catch(function(){});
+          })
+          .catch(function () { fallbackToNetEase(); });
+      }
 
-      audio.addEventListener('loadstart', () => showLoading('正在连接音频源…'));
-      audio.addEventListener('loadedmetadata', () => showLoading('已连接，缓冲中…'));
+      audio.addEventListener('loadstart', () => showLoading('正在准备音频…'));
+      audio.addEventListener('loadedmetadata', () => showLoading('已就绪，缓冲中…'));
       audio.addEventListener('canplay', () => { clearTimeout(watchdog); hideLoading(); });
       audio.addEventListener('playing', () => { clearTimeout(watchdog); hideLoading(); });
       audio.addEventListener('waiting', () => showLoading('缓冲中，请稍候…'));
       audio.addEventListener('stalled', () => showLoading('网络较慢，正在加载…'));
-      let bridgeRetry = false;
       audio.addEventListener('error', function onErr() {
-        if (!bridgeRetry && work.neteaseTrackId) {
-          bridgeRetry = true;
-          audio.src = '/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now();
-          audio.load();
-          audio.play().catch(function(){});
-          return;
-        }
-        fallbackToNetEase();
+        fallbackToNetEase(audio.error ? audio.error.code : null);
       });
 
       if (work.neteaseTrackId) {
-        // 主方案：经网站桥接取网易云最新地址，零存储、进度条可拖
-        // 加 ?t= 时间戳防浏览器缓存到旧版 302 跳转（否则会被网易云 CDN 的 Referer 校验拦截）
-        audio.src = '/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now();
-        audio.load();
-        // 在用户手势(点击卡片)内尝试自动播放；被微信拦截则用户点原生控件播放
-        audio.play().catch(function(){});
+        loadViaBridge();
       } else if (work.audioUrl) {
         loadSelfHosted();
       } else {
