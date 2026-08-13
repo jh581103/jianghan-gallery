@@ -6984,47 +6984,41 @@
         const extra = (errCode !== undefined && errCode !== null) ? '（错误码 ' + errCode + '）' : '';
         showLoading('站内播放在此环境暂不可用' + extra + '，请点下方「在网易云音乐打开原页面」收听');
       }
-      // 通过网站桥接把音频先拉到本地，转成 blob 链接再交给播放器。
-      // 播放器读的是本地文件，彻底绕开微信 X5 对"代理 URL 流式音频"的兼容问题；仍零存储、不落盘。
-      let blobUrl = null;
+      // 通过本站获取网易云最新 CDN 直链，302 跳转，零存储、不占容量。
+      // 302 响应禁止缓存 + Referrer-Policy: no-referrer，避免旧链接过期和 Referer 校验。
+      let bridgeRetry = false;
       let watchdog = null;
       function startWatchdog() {
         clearTimeout(watchdog);
         watchdog = setTimeout(function () {
           if (loading.style.display !== 'none') fallbackToNetEase();
-        }, 25000);
+        }, 12000);
       }
-      function loadViaBridge() {
-        showLoading('正在下载音频（约 34MB，请稍候）…');
-        fetch('/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now())
-          .then(function (resp) {
-            if (!resp.ok) throw new Error('http ' + resp.status);
-            return resp.blob();
-          })
-          .then(function (blob) {
-            if (blobUrl) URL.revokeObjectURL(blobUrl);
-            blobUrl = URL.createObjectURL(blob);
-            audio.src = blobUrl;
-            audio.load();
-            startWatchdog();
-            // 在用户手势(点击卡片)内尝试自动播放；被微信拦截则用户点原生控件播放
-            audio.play().catch(function(){});
-          })
-          .catch(function () { fallbackToNetEase(); });
+      function setupAudio(src) {
+        audio.src = src;
+        audio.load();
+        startWatchdog();
+        // 在用户手势(点击卡片)内尝试自动播放；被微信拦截则用户点原生控件播放
+        audio.play().catch(function(){});
       }
 
-      audio.addEventListener('loadstart', () => showLoading('正在准备音频…'));
-      audio.addEventListener('loadedmetadata', () => showLoading('已就绪，缓冲中…'));
+      audio.addEventListener('loadstart', () => showLoading('正在连接音频源…'));
+      audio.addEventListener('loadedmetadata', () => showLoading('已连接，缓冲中…'));
       audio.addEventListener('canplay', () => { clearTimeout(watchdog); hideLoading(); });
       audio.addEventListener('playing', () => { clearTimeout(watchdog); hideLoading(); });
       audio.addEventListener('waiting', () => showLoading('缓冲中，请稍候…'));
       audio.addEventListener('stalled', () => showLoading('网络较慢，正在加载…'));
       audio.addEventListener('error', function onErr() {
+        if (!bridgeRetry && work.neteaseTrackId) {
+          bridgeRetry = true;
+          setupAudio('/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now());
+          return;
+        }
         fallbackToNetEase(audio.error ? audio.error.code : null);
       });
 
       if (work.neteaseTrackId) {
-        loadViaBridge();
+        setupAudio('/netease/' + work.neteaseTrackId + '.mp3?t=' + Date.now());
       } else if (work.audioUrl) {
         loadSelfHosted();
       } else {

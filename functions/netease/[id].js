@@ -3,13 +3,13 @@ export async function onRequest(context) {
   if (!id) {
     return new Response('missing id', { status: 400 });
   }
-  // 兼容 /netease/123.mp3 形式（让微信 X5 内核识别为 mp3 文件，提高可播性）
+  // 兼容 /netease/123.mp3 形式（让浏览器/微信把 URL 识别为 mp3 文件）
   id = String(id).replace(/\.mp3$/i, '');
   const target = 'https://music.163.com/song/media/outer/url?id=' + encodeURIComponent(id) + '.mp3';
   const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
   const ref = 'https://music.163.com/';
 
-  // 1) 先用 HEAD 取网易云外层 302 的真实 CDN 地址
+  // 用 HEAD 取网易云外层 302 的最新 CDN 直链地址
   let upstream;
   try {
     upstream = await fetch(target, {
@@ -26,28 +26,17 @@ export async function onRequest(context) {
   }
   const httpsUrl = finalUrl.startsWith('http://') ? 'https://' + finalUrl.slice(7) : finalUrl;
 
-  // 2) 同域代理：浏览器只跟本站通信，本站带正确 Referer 去网易云拉流再回传，
-  //    彻底绕开浏览器直连 CDN 时的 Referer/跨域校验；透传 Range 使进度条可拖。
-  const range = context.request.headers.get('Range');
-  const reqHeaders = { 'User-Agent': ua, 'Referer': ref };
-  if (range) reqHeaders['Range'] = range;
-  let audio;
-  try {
-    audio = await fetch(httpsUrl, { headers: reqHeaders, redirect: 'follow' });
-  } catch (e) {
-    return new Response('audio fetch error: ' + (e && e.message ? e.message : 'unknown'), { status: 502 });
-  }
-  const out = {
-    'Content-Type': audio.headers.get('Content-Type') || 'audio/mpeg',
-    'Access-Control-Allow-Origin': '*',
-    'Accept-Ranges': 'bytes',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-  };
-  for (const h of ['Content-Length', 'Content-Range', 'ETag', 'Last-Modified']) {
-    const v = audio.headers.get(h);
-    if (v) out[h] = v;
-  }
-  return new Response(audio.body, { status: audio.status, headers: out });
+  // 返回最新 CDN 直链的 302 跳转，且不允许缓存，每次点击都重新解析最新 URL。
+  // Referrer-Policy: no-referrer 让浏览器跳去网易云 CDN 时不带本站 Referer，
+  // 绕开网易云对"非 music.163.com Referer"的校验。
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location': httpsUrl,
+      'Referrer-Policy': 'no-referrer',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, private',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  });
 }
