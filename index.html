@@ -7527,10 +7527,15 @@
     }
 
     // 生成抖音 App 深链，移动端点击可直接唤起抖音并定位到对应视频
+    // 安卓 Chrome/荣耀/华为等 Chromium 内核浏览器优先用 intent://，可减少一次系统确认弹窗
     function getDouyinDeepLink(url, videoId) {
       const id = getDouyinVideoId(url, videoId);
-      if (id) return 'snssdk1128://aweme/detail/' + id;
-      return url;
+      if (!id) return url;
+      const ua = navigator.userAgent || '';
+      if (/Android/i.test(ua)) {
+        return 'intent://aweme/detail/' + id + '#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;end';
+      }
+      return 'snssdk1128://aweme/detail/' + id;
     }
 
     // 检测是否是移动端/微信内（视频号链接可以直接跳转，不需要扫码）
