@@ -7327,12 +7327,8 @@
             openAudioModal(item);
           });
         } else if (externalUrl && externalUrl !== '') {
-          if (isDouyinUrl(externalUrl) && isMobileOrWechat()) {
-            // 移动端：直接尝试唤起抖音 App，跳过网页中转页
-            card.href = getDouyinDeepLink(externalUrl, item.douyinVideoId);
-          } else {
-            card.href = externalUrl;
-          }
+          // 抖音等外链：所有平台都走网页版（抖音分享页内再点"打开抖音"按钮唤起 App）
+          card.href = externalUrl;
           card.target = '_blank';
           card.rel = 'noopener noreferrer';
         } else if (item.medium === '文字') {
@@ -7438,12 +7434,8 @@
         qrBox.style.display = '';
         renderQrCode(workUrl, 'detailQrBox');
       } else if (workUrl && workUrl !== '' && isDouyinUrl(workUrl)) {
-        // 抖音链接：手机端直接唤起 App 播放页；桌面端保持网页分享页
-        if (isMobileOrWechat()) {
-          cta.href = getDouyinDeepLink(workUrl, work.douyinVideoId);
-        } else {
-          cta.href = workUrl;
-        }
+        // 抖音链接：所有平台都走网页版分享页（页面内再点"打开抖音"按钮唤起 App）
+        cta.href = workUrl;
         ctaText.textContent = `在 ${work.platform} 打开`;
         cta.style.opacity = '';
         cta.style.pointerEvents = '';
@@ -7513,29 +7505,6 @@
     function isDouyinUrl(url) {
       if (!url) return false;
       return /v\.douyin\.com/.test(url) || /douyin\.com/.test(url);
-    }
-
-    // 从抖音 URL 中提取视频 ID：优先取 work.douyinVideoId，其次从 /video/{id} 或 /share/video/{id} 解析
-    function getDouyinVideoId(url, fallbackVideoId) {
-      if (fallbackVideoId) return fallbackVideoId;
-      if (!url) return null;
-      let m = url.match(/\/video\/(\d{10,})/);
-      if (m) return m[1];
-      m = url.match(/\/share\/video\/(\d{10,})/);
-      if (m) return m[1];
-      return null;
-    }
-
-    // 生成抖音 App 深链，移动端点击可直接唤起抖音并定位到对应视频
-    // 安卓 Chrome/荣耀/华为等 Chromium 内核浏览器优先用 intent://，可减少一次系统确认弹窗
-    function getDouyinDeepLink(url, videoId) {
-      const id = getDouyinVideoId(url, videoId);
-      if (!id) return url;
-      const ua = navigator.userAgent || '';
-      if (/Android/i.test(ua)) {
-        return 'intent://aweme/detail/' + id + '#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;end';
-      }
-      return 'snssdk1128://aweme/detail/' + id;
     }
 
     // 检测是否是移动端/微信内（视频号链接可以直接跳转，不需要扫码）
