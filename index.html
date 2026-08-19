@@ -826,6 +826,7 @@
       thumbnail: "thumbnails/沙河小院午餐.jpg",
       description: "沙河小院川菜午餐，2026年6月28日。传统中式门面里的地道川菜，馆香四溢。",
       url: "https://v.douyin.com/YCRRu1PDa10/",
+      douyinVideoId: "7656331845562454882",
       tags: ["美食", "馆香", "视频"],
       medium: "视频",
       platform: "抖音",
@@ -7326,7 +7327,12 @@
             openAudioModal(item);
           });
         } else if (externalUrl && externalUrl !== '') {
-          card.href = externalUrl;
+          if (isDouyinUrl(externalUrl) && isMobileOrWechat()) {
+            // 移动端：直接尝试唤起抖音 App，跳过网页中转页
+            card.href = getDouyinDeepLink(externalUrl, item.douyinVideoId);
+          } else {
+            card.href = externalUrl;
+          }
           card.target = '_blank';
           card.rel = 'noopener noreferrer';
         } else if (item.medium === '文字') {
@@ -7432,9 +7438,12 @@
         qrBox.style.display = '';
         renderQrCode(workUrl, 'detailQrBox');
       } else if (workUrl && workUrl !== '' && isDouyinUrl(workUrl)) {
-        // 抖音链接：所有平台都显示按钮
-        // 手机端点按钮跳抖音 App，电脑端会跳"长按复制"页（提示用户复制到抖音 App 打开）
-        cta.href = workUrl;
+        // 抖音链接：手机端直接唤起 App 播放页；桌面端保持网页分享页
+        if (isMobileOrWechat()) {
+          cta.href = getDouyinDeepLink(workUrl, work.douyinVideoId);
+        } else {
+          cta.href = workUrl;
+        }
         ctaText.textContent = `在 ${work.platform} 打开`;
         cta.style.opacity = '';
         cta.style.pointerEvents = '';
@@ -7504,6 +7513,24 @@
     function isDouyinUrl(url) {
       if (!url) return false;
       return /v\.douyin\.com/.test(url) || /douyin\.com/.test(url);
+    }
+
+    // 从抖音 URL 中提取视频 ID：优先取 work.douyinVideoId，其次从 /video/{id} 或 /share/video/{id} 解析
+    function getDouyinVideoId(url, fallbackVideoId) {
+      if (fallbackVideoId) return fallbackVideoId;
+      if (!url) return null;
+      let m = url.match(/\/video\/(\d{10,})/);
+      if (m) return m[1];
+      m = url.match(/\/share\/video\/(\d{10,})/);
+      if (m) return m[1];
+      return null;
+    }
+
+    // 生成抖音 App 深链，移动端点击可直接唤起抖音并定位到对应视频
+    function getDouyinDeepLink(url, videoId) {
+      const id = getDouyinVideoId(url, videoId);
+      if (id) return 'snssdk1128://aweme/detail/' + id;
+      return url;
     }
 
     // 检测是否是移动端/微信内（视频号链接可以直接跳转，不需要扫码）
