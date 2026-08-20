@@ -581,7 +581,7 @@
       display: inline-flex;
       gap: 8px;
       align-items: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       margin-left: 6px;
     }
     /* 朗读状态文字（位于正文下方） */
@@ -7614,7 +7614,7 @@
 
       // 语速 + 暂停/停止 按钮只绑一次
       if (!ttsWired) {
-        const speeds = [0.75, 1, 1.25, 1.5, 2];
+        const speeds = [1, 1.5];
         speeds.forEach(s => {
           const b = document.createElement('button');
           b.textContent = s + 'x';
