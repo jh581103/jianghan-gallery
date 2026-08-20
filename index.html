@@ -611,6 +611,13 @@
       display: inline-flex;
       gap: 5px;
     }
+    .tts-status {
+      width: 100%;
+      color: #b06a00;
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
     .detail-tags {
       display: flex;
       flex-wrap: wrap;
@@ -845,6 +852,7 @@
           <button id="ttsStop" class="tts-btn">⏹ 停止</button>
           <span class="tts-label">语速</span>
           <span id="ttsSpeed" class="tts-speeds"></span>
+          <div id="ttsStatus" class="tts-status"></div>
         </div>
         <div class="detail-tags" id="detailTags"></div>
         <div class="detail-qr" id="detailQr" style="display:none;">
@@ -7515,7 +7523,11 @@
         }
       };
       u.onend = function () { if (onEnd) onEnd(); };
-      u.onerror = function () { if (onEnd) onEnd(); };
+      u.onerror = function (e) {
+        const se = document.getElementById('ttsStatus');
+        if (se) se.textContent = '朗读启动失败：' + (e && e.error ? e.error : '未知错误') + '（可能未安装中文语音或浏览器拦截）';
+        if (onEnd) onEnd();
+      };
       ttsUtterance = u;
       // 仅在有正在进行的朗读时才取消，避免“刚取消又播放”导致首次无声
       if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
@@ -7552,6 +7564,31 @@
       const toggleBtn = document.getElementById('ttsToggle');
       const stopBtn = document.getElementById('ttsStop');
       const speedWrap = document.getElementById('ttsSpeed');
+      const statusEl = document.getElementById('ttsStatus');
+      ttsBar.style.display = 'flex';
+
+      // 浏览器不支持语音合成：明确告知，隐藏控制按钮
+      if (!isTTSAvailable()) {
+        toggleBtn.style.display = 'none';
+        stopBtn.style.display = 'none';
+        speedWrap.style.display = 'none';
+        if (statusEl) statusEl.textContent = '当前浏览器不支持语音朗读（可换 Chrome / 系统浏览器再试）';
+        return;
+      }
+      toggleBtn.style.display = '';
+      stopBtn.style.display = '';
+      speedWrap.style.display = '';
+
+      // 检查中文语音是否就绪，给出明确状态
+      const voices = window.speechSynthesis.getVoices();
+      const hasZh = voices.some(v => /zh|cmn|Chinese/i.test(v.lang + ' ' + v.name));
+      if (voices.length === 0) {
+        if (statusEl) statusEl.textContent = '正在加载语音引擎…';
+      } else if (!hasZh) {
+        if (statusEl) statusEl.textContent = '未找到中文语音：请到手机「设置 → 语言和输入法 → 文字转语音(TTS)」安装中文语音包后重试';
+      } else {
+        if (statusEl) statusEl.textContent = '';
+      }
 
       // 语速 + 暂停/停止 按钮只绑一次
       if (!ttsWired) {
@@ -7593,8 +7630,6 @@
         ttsWired = true;
       }
 
-      ttsBar.style.display = 'flex';
-
       if (autoplay) {
         toggleBtn.textContent = '⏸ 暂停';
         speakText(text, onTTSend);
@@ -7607,6 +7642,8 @@
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
       const toggleBtn = document.getElementById('ttsToggle');
       if (toggleBtn) toggleBtn.textContent = '⏸ 暂停';
+      const se = document.getElementById('ttsStatus');
+      if (se) se.textContent = '';
     }
 
     // === 显示详情页 ===
@@ -7632,18 +7669,16 @@
       `;
       
       const descEl = document.getElementById('detailDesc');
-      // 文字作品且浏览器支持语音合成：正文交给 setupTTS 按字符渲染（用于随朗读高亮）
-      const ttsTextWork = (work.medium === '文字' && work.description && isTTSAvailable());
-      if (!ttsTextWork) {
+      // 文字作品：一律按字符渲染（供朗读高亮）；非文字作品走原有逻辑
+      const isTextWork = (work.medium === '文字' && work.description);
+      if (!isTextWork) {
         if (work.description) {
-          // 文字作品：把连续空行压缩为单个换行，避免每句之间过大空白
           const descText = (work.medium === '文字')
             ? work.description.replace(/\n\n+/g, '\n')
             : work.description;
           descEl.textContent = descText;
           descEl.classList.remove('empty-text');
           if (work.medium === '文字') {
-            // 文字作品：保留换行 + 正常行距 + 可滚动
             descEl.classList.add('text-content');
           } else {
             descEl.classList.remove('text-content');
@@ -7718,7 +7753,7 @@
       document.getElementById('gallery').style.display = 'none';
       // 文字作品：挂载语音朗读（autoplay 时随卡片点击手势自动开始）
       const ttsBar = document.getElementById('detailTts');
-      if (ttsTextWork) {
+      if (isTextWork) {
         setupTTS(work, autoplay);
       } else {
         ttsBar.style.display = 'none';
