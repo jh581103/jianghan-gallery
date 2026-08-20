@@ -579,10 +579,23 @@
     /* 朗读控制条（移入 meta 行右侧，日期之后） */
     .tts-controls {
       display: inline-flex;
-      gap: 8px;
+      gap: 5px;
       align-items: center;
       flex-wrap: nowrap;
       margin-left: 6px;
+    }
+    /* 详情页 meta 行内的朗读控制按钮：缩小，单排呈现 */
+    .tts-controls .tts-btn {
+      padding: 3px 7px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+    .tts-controls .tts-label {
+      font-size: 12px;
+      margin-left: 2px;
+    }
+    .tts-controls .tts-speeds {
+      gap: 4px;
     }
     /* 朗读状态文字（位于正文下方） */
     .detail-tts-status {
@@ -854,8 +867,8 @@
         </div>
         <div class="detail-tags" id="detailTags"></div>
         <div id="ttsControls" class="tts-controls" style="display:none;">
-          <button id="ttsToggle" class="tts-btn">⏸ 暂停</button>
-          <button id="ttsStop" class="tts-btn">⏹ 停止</button>
+          <button id="ttsToggle" class="tts-btn">暂停</button>
+          <button id="ttsStop" class="tts-btn">停止</button>
           <span class="tts-label">语速</span>
           <span id="ttsSpeed" class="tts-speeds"></span>
         </div>
@@ -7555,7 +7568,7 @@
       setTimeout(function () {
         if (ttsUtterance === u && !window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
           const tb = document.getElementById('ttsToggle');
-          if (tb) tb.textContent = '▶ 朗读';
+          if (tb) tb.textContent = '朗读';
         }
       }, 1500);
     }
@@ -7614,13 +7627,14 @@
 
       // 语速 + 暂停/停止 按钮只绑一次
       if (!ttsWired) {
-        const speeds = [1, 1.5];
+        const speeds = [1.5, 2];
+        if (speeds.indexOf(ttsRate) < 0) ttsRate = speeds[0];
         speeds.forEach(s => {
           const b = document.createElement('button');
           b.textContent = s + 'x';
           b.dataset.speed = s;
-          b.className = 'tts-btn' + (s === 1 ? ' active' : '');
-          b.style.cssText = (s === 1 ? 'background:#e8f0fe;border-color:#4a90e2;color:#1a73e8;font-weight:600;' : '');
+          b.className = 'tts-btn' + (s === speeds[0] ? ' active' : '');
+          b.style.cssText = (s === speeds[0] ? 'background:#e8f0fe;border-color:#4a90e2;color:#1a73e8;font-weight:600;' : '');
           b.onclick = () => {
             ttsRate = s;
             speedWrap.querySelectorAll('button').forEach(x => {
@@ -7635,35 +7649,35 @@
         toggleBtn.onclick = () => {
           if (ttsUtterance && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
             window.speechSynthesis.pause();
-            toggleBtn.textContent = '▶ 继续';
+            toggleBtn.textContent = '继续';
           } else if (ttsUtterance && window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
-            toggleBtn.textContent = '⏸ 暂停';
+            toggleBtn.textContent = '暂停';
           } else {
             // 未开始或已结束：从头朗读
             speakText(text, onTTSend);
-            toggleBtn.textContent = '⏸ 暂停';
+            toggleBtn.textContent = '暂停';
           }
         };
         stopBtn.onclick = () => {
           stopTTS();
-          toggleBtn.textContent = '▶ 朗读';
+          toggleBtn.textContent = '朗读';
         };
         ttsWired = true;
       }
 
       if (autoplay) {
-        toggleBtn.textContent = '⏸ 暂停';
+        toggleBtn.textContent = '暂停';
         speakText(text, onTTSend);
       } else {
-        toggleBtn.textContent = '▶ 朗读';
+        toggleBtn.textContent = '朗读';
       }
     }
 
     function onTTSend() {
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
       const toggleBtn = document.getElementById('ttsToggle');
-      if (toggleBtn) toggleBtn.textContent = '⏸ 暂停';
+      if (toggleBtn) toggleBtn.textContent = '暂停';
       const se = document.getElementById('ttsStatus');
       if (se) se.textContent = '';
       const sw = document.getElementById('detailTtsStatus');
