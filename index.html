@@ -7556,18 +7556,21 @@
           speedWrap.appendChild(b);
         });
         toggleBtn.onclick = () => {
-          if (!ttsUtterance) return;
-          if (window.speechSynthesis.paused) {
-            window.speechSynthesis.resume();
-            toggleBtn.textContent = '⏸ 暂停';
-          } else if (window.speechSynthesis.speaking) {
+          if (ttsUtterance && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
             window.speechSynthesis.pause();
             toggleBtn.textContent = '▶ 继续';
+          } else if (ttsUtterance && window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+            toggleBtn.textContent = '⏸ 暂停';
+          } else {
+            // 未开始或已结束：从头朗读
+            speakText(text, onTTSend);
+            toggleBtn.textContent = '⏸ 暂停';
           }
         };
         stopBtn.onclick = () => {
           stopTTS();
-          toggleBtn.textContent = '⏸ 暂停';
+          toggleBtn.textContent = '▶ 朗读';
         };
         ttsWired = true;
       }
@@ -7575,7 +7578,10 @@
       ttsBar.style.display = 'flex';
 
       if (autoplay) {
+        toggleBtn.textContent = '⏸ 暂停';
         speakText(text, onTTSend);
+      } else {
+        toggleBtn.textContent = '▶ 朗读';
       }
     }
 
