@@ -571,6 +571,46 @@
       color: #8a7a60;
       font-style: italic;
     }
+    /* 朗读：当前句高亮 */
+    .detail-desc .tts-char.tts-active {
+      background: #fff3a8;
+      border-radius: 2px;
+    }
+    /* 朗读控制条 */
+    .detail-tts {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 6px 24px 0;
+      padding: 12px 0;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .tts-btn {
+      padding: 7px 12px;
+      border: 1px solid #dcdcdc;
+      background: #f6f7f9;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #333;
+      line-height: 1;
+    }
+    .tts-btn.active {
+      background: #e8f0fe;
+      border-color: #4a90e2;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+    .tts-label {
+      color: #888;
+      font-size: 13px;
+      margin-left: 4px;
+    }
+    .tts-speeds {
+      display: inline-flex;
+      gap: 5px;
+    }
     .detail-tags {
       display: flex;
       flex-wrap: wrap;
@@ -800,6 +840,12 @@
         <h1 class="detail-title" id="detailTitle"></h1>
         <div class="detail-meta" id="detailMeta"></div>
         <p class="detail-desc" id="detailDesc"></p>
+        <div class="detail-tts" id="detailTts" style="display:none;">
+          <button id="ttsToggle" class="tts-btn">⏸ 暂停</button>
+          <button id="ttsStop" class="tts-btn">⏹ 停止</button>
+          <span class="tts-label">语速</span>
+          <span id="ttsSpeed" class="tts-speeds"></span>
+        </div>
         <div class="detail-tags" id="detailTags"></div>
         <div class="detail-qr" id="detailQr" style="display:none;">
           <div class="detail-qr-box" id="detailQrBox"></div>
@@ -7380,6 +7426,12 @@
           card.rel = 'noopener noreferrer';
         } else if (item.medium === '文字') {
           card.href = '#work-' + item.id;
+          card.addEventListener('click', e => {
+            // 在用户点击手势内打开详情并自动朗读，绕过浏览器自动播放限制
+            e.preventDefault();
+            showDetail(item.id, true);
+            history.replaceState(null, '', '#work-' + item.id);
+          });
         } else if (item.thumbnail && item.thumbnail !== '') {
           card.href = item.thumbnail;
           card.target = '_blank';
@@ -7422,12 +7474,123 @@
       // 重新挂载浏览量观察器（过滤后只显示当前可见卡片）
       setupViewCount();
     }
-    
+
+    // === 文字作品朗读（浏览器语音合成，零存储、不占容量） ===
+    let ttsUtterance = null;
+    let ttsSpans = [];
+    let ttsRate = 1;
+    let ttsWired = false;
+
+    function isTTSAvailable() {
+      return ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+    }
+
+    function stopTTS() {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+      ttsUtterance = null;
+      ttsSpans.forEach(s => s.classList.remove('tts-active'));
+      ttsSpans = [];
+    }
+
+    // 朗读 text，并随 onboundary 事件高亮当前字符 + 自动滚动
+    function speakText(text, onEnd) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN';
+      u.rate = ttsRate;
+      u.onboundary = function (e) {
+        const i = e.charIndex;
+        if (typeof i === 'number' && ttsSpans[i]) {
+          ttsSpans.forEach(s => s.classList.remove('tts-active'));
+          const span = ttsSpans[i];
+          span.classList.add('tts-active');
+          span.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      };
+      u.onend = function () { if (onEnd) onEnd(); };
+      u.onerror = function () { if (onEnd) onEnd(); };
+      ttsUtterance = u;
+      window.speechSynthesis.speak(u);
+    }
+
+    function setupTTS(work, autoplay) {
+      stopTTS();
+      const descEl = document.getElementById('detailDesc');
+      const text = (work.description || '').replace(/\n\n+/g, '\n');
+      // 按字符拆成小片段，便于随朗读进度高亮 + 滚动
+      descEl.textContent = '';
+      ttsSpans = [];
+      Array.from(text).forEach(ch => {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        span.className = 'tts-char';
+        descEl.appendChild(span);
+        ttsSpans.push(span);
+      });
+      descEl.classList.add('text-content');
+      descEl.classList.remove('empty-text');
+
+      const ttsBar = document.getElementById('detailTts');
+      const toggleBtn = document.getElementById('ttsToggle');
+      const stopBtn = document.getElementById('ttsStop');
+      const speedWrap = document.getElementById('ttsSpeed');
+
+      // 语速 + 暂停/停止 按钮只绑一次
+      if (!ttsWired) {
+        const speeds = [0.75, 1, 1.25, 1.5, 2];
+        speeds.forEach(s => {
+          const b = document.createElement('button');
+          b.textContent = s + 'x';
+          b.dataset.speed = s;
+          b.className = 'tts-btn' + (s === 1 ? ' active' : '');
+          b.style.cssText = (s === 1 ? 'background:#e8f0fe;border-color:#4a90e2;color:#1a73e8;font-weight:600;' : '');
+          b.onclick = () => {
+            ttsRate = s;
+            speedWrap.querySelectorAll('button').forEach(x => {
+              x.style.background = '#f6f7f9'; x.style.borderColor = '#dcdcdc'; x.style.color = '#333'; x.style.fontWeight = '400';
+            });
+            b.style.background = '#e8f0fe'; b.style.borderColor = '#4a90e2'; b.style.color = '#1a73e8'; b.style.fontWeight = '600';
+            // 调速即时生效：如果正在朗读则重启以应用新语速
+            if (ttsUtterance) { speakText(text, onTTSend); }
+          };
+          speedWrap.appendChild(b);
+        });
+        toggleBtn.onclick = () => {
+          if (!ttsUtterance) return;
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+            toggleBtn.textContent = '⏸ 暂停';
+          } else if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.pause();
+            toggleBtn.textContent = '▶ 继续';
+          }
+        };
+        stopBtn.onclick = () => {
+          stopTTS();
+          toggleBtn.textContent = '⏸ 暂停';
+        };
+        ttsWired = true;
+      }
+
+      ttsBar.style.display = 'flex';
+
+      if (autoplay) {
+        speakText(text, onTTSend);
+      }
+    }
+
+    function onTTSend() {
+      ttsSpans.forEach(s => s.classList.remove('tts-active'));
+      const toggleBtn = document.getElementById('ttsToggle');
+      if (toggleBtn) toggleBtn.textContent = '⏸ 暂停';
+    }
+
     // === 显示详情页 ===
-    function showDetail(id) {
+    function showDetail(id, autoplay) {
       const work = works.find(w => w && w.id === id);
       if (!work) { hideDetail(); return; }
-      
+      autoplay = !!autoplay;
+
       const thumb = document.getElementById('detailThumb');
       if (work.thumbnail) {
         thumb.innerHTML = `<img src="${escapeHtml(work.thumbnail)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
@@ -7445,23 +7608,27 @@
       `;
       
       const descEl = document.getElementById('detailDesc');
-      if (work.description) {
-        // 文字作品：把连续空行压缩为单个换行，避免每句之间过大空白
-        const descText = (work.medium === '文字')
-          ? work.description.replace(/\n\n+/g, '\n')
-          : work.description;
-        descEl.textContent = descText;
-        descEl.classList.remove('empty-text');
-        if (work.medium === '文字') {
-          // 文字作品：保留换行 + 正常行距 + 可滚动
-          descEl.classList.add('text-content');
+      // 文字作品且浏览器支持语音合成：正文交给 setupTTS 按字符渲染（用于随朗读高亮）
+      const ttsTextWork = (work.medium === '文字' && work.description && isTTSAvailable());
+      if (!ttsTextWork) {
+        if (work.description) {
+          // 文字作品：把连续空行压缩为单个换行，避免每句之间过大空白
+          const descText = (work.medium === '文字')
+            ? work.description.replace(/\n\n+/g, '\n')
+            : work.description;
+          descEl.textContent = descText;
+          descEl.classList.remove('empty-text');
+          if (work.medium === '文字') {
+            // 文字作品：保留换行 + 正常行距 + 可滚动
+            descEl.classList.add('text-content');
+          } else {
+            descEl.classList.remove('text-content');
+          }
         } else {
+          descEl.textContent = work.medium === '文字' ? '（暂无内容）' : '（暂无简介）';
+          descEl.classList.add('empty-text');
           descEl.classList.remove('text-content');
         }
-      } else {
-        descEl.textContent = work.medium === '文字' ? '（暂无内容）' : '（暂无简介）';
-        descEl.classList.add('empty-text');
-        descEl.classList.remove('text-content');
       }
       
       document.getElementById('detailTags').innerHTML = work.tags
@@ -7525,11 +7692,22 @@
       document.getElementById('sectionNote').style.display = 'none';
       document.getElementById('filters').style.display = 'none';
       document.getElementById('gallery').style.display = 'none';
+      // 文字作品：挂载语音朗读（autoplay 时随卡片点击手势自动开始）
+      const ttsBar = document.getElementById('detailTts');
+      if (ttsTextWork) {
+        setupTTS(work, autoplay);
+      } else {
+        ttsBar.style.display = 'none';
+        stopTTS();
+      }
+
       document.getElementById('detailPage').style.display = 'block';
       window.scrollTo(0, 0);
     }
     
     function hideDetail() {
+      // 离开详情页时停止朗读，避免后台继续出声
+      stopTTS();
       document.getElementById('banner').style.display = '';
       document.getElementById('sectionNav').style.display = '';
       document.getElementById('filters').style.display = '';
@@ -7579,7 +7757,7 @@
       const hash = location.hash;
       if (hash.startsWith('#work-')) {
         const id = parseInt(hash.slice(6));
-        if (!isNaN(id)) showDetail(id);
+        if (!isNaN(id)) showDetail(id, false);  // 通过地址/返回键进入不自动朗读
       } else {
         hideDetail();
       }
