@@ -576,15 +576,17 @@
       background: #fff3a8;
       border-radius: 2px;
     }
-    /* 朗读控制条 */
-    .detail-tts {
-      display: flex;
+    /* 朗读控制条（移入 meta 行右侧，日期之后） */
+    .tts-controls {
+      display: inline-flex;
       gap: 8px;
       align-items: center;
       flex-wrap: wrap;
-      margin: 6px 24px 0;
-      padding: 12px 0;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      margin-left: 6px;
+    }
+    /* 朗读状态文字（位于正文下方） */
+    .detail-tts-status {
+      padding: 0 24px 8px;
     }
     .tts-btn {
       padding: 7px 12px;
@@ -847,14 +849,16 @@
         <h1 class="detail-title" id="detailTitle"></h1>
         <div class="detail-meta" id="detailMeta"></div>
         <p class="detail-desc" id="detailDesc"></p>
-        <div class="detail-tts" id="detailTts" style="display:none;">
+        <div class="detail-tts-status" id="detailTtsStatus" style="display:none;">
+          <div id="ttsStatus" class="tts-status"></div>
+        </div>
+        <div class="detail-tags" id="detailTags"></div>
+        <div id="ttsControls" class="tts-controls" style="display:none;">
           <button id="ttsToggle" class="tts-btn">⏸ 暂停</button>
           <button id="ttsStop" class="tts-btn">⏹ 停止</button>
           <span class="tts-label">语速</span>
           <span id="ttsSpeed" class="tts-speeds"></span>
-          <div id="ttsStatus" class="tts-status"></div>
         </div>
-        <div class="detail-tags" id="detailTags"></div>
         <div class="detail-qr" id="detailQr" style="display:none;">
           <div class="detail-qr-box" id="detailQrBox"></div>
           <p class="detail-qr-hint">用微信扫一扫观看</p>
@@ -7526,6 +7530,8 @@
       u.onerror = function (e) {
         const se = document.getElementById('ttsStatus');
         if (se) se.textContent = '朗读启动失败：' + (e && e.error ? e.error : '未知错误') + '（可能未安装中文语音或浏览器拦截）';
+        const sw = document.getElementById('detailTtsStatus');
+        if (sw) sw.style.display = 'block';
         if (onEnd) onEnd();
       };
       ttsUtterance = u;
@@ -7560,24 +7566,27 @@
       descEl.classList.add('text-content');
       descEl.classList.remove('empty-text');
 
-      const ttsBar = document.getElementById('detailTts');
+      const ttsControls = document.getElementById('ttsControls');
+      const ttsStatusWrap = document.getElementById('detailTtsStatus');
       const toggleBtn = document.getElementById('ttsToggle');
       const stopBtn = document.getElementById('ttsStop');
       const speedWrap = document.getElementById('ttsSpeed');
       const statusEl = document.getElementById('ttsStatus');
-      ttsBar.style.display = 'flex';
 
-      // 浏览器不支持语音合成：明确告知，隐藏控制按钮
+      // 浏览器不支持语音合成：明确告知，隐藏控制按钮、仅显示状态
       if (!isTTSAvailable()) {
         toggleBtn.style.display = 'none';
         stopBtn.style.display = 'none';
         speedWrap.style.display = 'none';
-        if (statusEl) statusEl.textContent = '当前浏览器不支持语音朗读（可换 Chrome / 系统浏览器再试）';
+        ttsControls.style.display = 'none';
+        if (statusEl) statusEl.textContent = '当前浏览器不支持语音朗读（可换 Chrome / Edge / 系统浏览器再试）';
+        if (ttsStatusWrap) ttsStatusWrap.style.display = 'block';
         return;
       }
       toggleBtn.style.display = '';
       stopBtn.style.display = '';
       speedWrap.style.display = '';
+      ttsControls.style.display = 'flex';
 
       // 检查中文语音是否就绪，给出明确状态
       const voices = window.speechSynthesis.getVoices();
@@ -7589,6 +7598,8 @@
       } else {
         if (statusEl) statusEl.textContent = '';
       }
+      // 有提示文字才显示状态行，正常朗读时不显示
+      if (ttsStatusWrap) ttsStatusWrap.style.display = (statusEl && statusEl.textContent) ? 'block' : 'none';
 
       // 语速 + 暂停/停止 按钮只绑一次
       if (!ttsWired) {
@@ -7644,6 +7655,8 @@
       if (toggleBtn) toggleBtn.textContent = '⏸ 暂停';
       const se = document.getElementById('ttsStatus');
       if (se) se.textContent = '';
+      const sw = document.getElementById('detailTtsStatus');
+      if (sw) sw.style.display = 'none';
     }
 
     // === 显示详情页 ===
@@ -7751,12 +7764,15 @@
       document.getElementById('sectionNote').style.display = 'none';
       document.getElementById('filters').style.display = 'none';
       document.getElementById('gallery').style.display = 'none';
-      // 文字作品：挂载语音朗读（autoplay 时随卡片点击手势自动开始）
-      const ttsBar = document.getElementById('detailTts');
+      // 文字作品：挂载语音朗读（autoplay 时随卡片点击手势自动开始），控制条移到 meta 行右侧（日期之后）
+      const ttsControls = document.getElementById('ttsControls');
+      const ttsStatusWrap = document.getElementById('detailTtsStatus');
       if (isTextWork) {
+        document.getElementById('detailMeta').appendChild(ttsControls);
         setupTTS(work, autoplay);
       } else {
-        ttsBar.style.display = 'none';
+        ttsControls.style.display = 'none';
+        ttsStatusWrap.style.display = 'none';
         stopTTS();
       }
 
