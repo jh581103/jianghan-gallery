@@ -7485,6 +7485,14 @@
       return ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
     }
 
+    // 预加载语音列表：手机浏览器语音引擎异步就绪，提前触发可避免“首次朗读无声”
+    if (isTTSAvailable()) {
+      try { window.speechSynthesis.getVoices(); } catch (e) {}
+      window.speechSynthesis.addEventListener('voiceschanged', function () {
+        try { window.speechSynthesis.getVoices(); } catch (e) {}
+      });
+    }
+
     function stopTTS() {
       try { window.speechSynthesis.cancel(); } catch (e) {}
       ttsUtterance = null;
@@ -7494,7 +7502,6 @@
 
     // 朗读 text，并随 onboundary 事件高亮当前字符 + 自动滚动
     function speakText(text, onEnd) {
-      try { window.speechSynthesis.cancel(); } catch (e) {}
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'zh-CN';
       u.rate = ttsRate;
@@ -7510,7 +7517,18 @@
       u.onend = function () { if (onEnd) onEnd(); };
       u.onerror = function () { if (onEnd) onEnd(); };
       ttsUtterance = u;
+      // 仅在有正在进行的朗读时才取消，避免“刚取消又播放”导致首次无声
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
       window.speechSynthesis.speak(u);
+      // 看门狗：1.5s 内若实际未开始朗读（语音未就绪/被拦截），把按钮变回“朗读”以便手动触发
+      setTimeout(function () {
+        if (ttsUtterance === u && !window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          const tb = document.getElementById('ttsToggle');
+          if (tb) tb.textContent = '▶ 朗读';
+        }
+      }, 1500);
     }
 
     function setupTTS(work, autoplay) {
