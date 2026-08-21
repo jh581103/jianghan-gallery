@@ -7622,6 +7622,13 @@
     let ttsHighlightSpans = [];
     let ttsRate = 1;
     let ttsWired = false;
+    // 计时兜底高亮（不依赖 onboundary，兼容不触发边界事件的浏览器/手机）
+    let ttsRafId = null;
+    let ttsHighlightBaseTime = 0;
+    let ttsHighlightCps = 5;
+    let ttsApplyHighlight = null;
+    let ttsLastHighlightIdx = -1;
+    let ttsPausedElapsed = 0;
 
     function isTTSAvailable() {
       return ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
@@ -7637,6 +7644,7 @@
 
     function stopTTS() {
       try { window.speechSynthesis.cancel(); } catch (e) {}
+      stopTtsTimer();
       ttsUtterance = null;
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
       try { document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => d.classList.remove('tts-line-active')); } catch (e) {}
@@ -7645,23 +7653,55 @@
 
     // 朗读 text，并随 onboundary 事件高亮当前字符 + 自动滚动
     // ttsHighlightSpans 决定高亮范围（全文 or 选中的部分），随朗读目标切换
+    // 高亮指定字符索引 + 其所在整行；idx 未变则跳过，避免每帧重复操作 DOM
+    function applyTtsHighlight(idx) {
+      if (idx === ttsLastHighlightIdx) return;
+      idx = Math.max(0, Math.min(ttsHighlightSpans.length - 1, idx));
+      const span = ttsHighlightSpans[idx];
+      if (!span) return;
+      ttsLastHighlightIdx = idx;
+      ttsHighlightSpans.forEach(s => s.classList.remove('tts-active'));
+      span.classList.add('tts-active');
+      span.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      // 同步高亮「当前正在朗读的整行」，方便一眼看出读到哪一行
+      const lineDiv = (span.parentElement && span.parentElement.classList && span.parentElement.classList.contains('tts-line')) ? span.parentElement : null;
+      document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => { if (d !== lineDiv) d.classList.remove('tts-line-active'); });
+      if (lineDiv) lineDiv.classList.add('tts-line-active');
+    }
+
+    // 计时兜底高亮：按估算语速推进当前字 + 整行，不依赖 onboundary（兼容不触发边界事件的浏览器/手机）
+    function startTtsTimer(cps) {
+      stopTtsTimer();
+      ttsHighlightCps = cps;
+      function tick() {
+        if (!ttsUtterance || !ttsApplyHighlight) return;
+        const elapsed = (performance.now() - ttsHighlightBaseTime) / 1000;
+        ttsApplyHighlight(Math.floor(elapsed * cps));
+        ttsRafId = requestAnimationFrame(tick);
+      }
+      ttsRafId = requestAnimationFrame(tick);
+    }
+    function stopTtsTimer() {
+      if (ttsRafId) { try { cancelAnimationFrame(ttsRafId); } catch (e) {} ttsRafId = null; }
+    }
+
     function speakText(text, onEnd) {
+      stopTtsTimer();
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
       document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => d.classList.remove('tts-line-active'));
+      ttsLastHighlightIdx = -1;
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'zh-CN';
       u.rate = ttsRate;
+      // 估算每秒字符数（中文），作为「无 onboundary 时」的计时兜底基准
+      const cps = 4.5 * ttsRate;
+      ttsApplyHighlight = applyTtsHighlight;
       u.onboundary = function (e) {
         const i = e.charIndex;
         if (typeof i === 'number' && ttsHighlightSpans[i]) {
-          ttsHighlightSpans.forEach(s => s.classList.remove('tts-active'));
-          const span = ttsHighlightSpans[i];
-          span.classList.add('tts-active');
-          span.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          // 同步高亮「当前正在朗读的整行」，方便一眼看出读到哪一行
-          const lineDiv = (span.parentElement && span.parentElement.classList && span.parentElement.classList.contains('tts-line')) ? span.parentElement : null;
-          document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => { if (d !== lineDiv) d.classList.remove('tts-line-active'); });
-          if (lineDiv) lineDiv.classList.add('tts-line-active');
+          applyTtsHighlight(i);
+          // 用真实朗读位置重置计时基准，消除估算漂移（之后计时器会沿真实位置继续推进）
+          ttsHighlightBaseTime = performance.now() - (i / cps) * 1000;
         }
       };
       u.onend = function () { if (onEnd) onEnd(); };
@@ -7678,11 +7718,15 @@
         try { window.speechSynthesis.cancel(); } catch (e) {}
       }
       window.speechSynthesis.speak(u);
-      // 看门狗：1.5s 内若实际未开始朗读（语音未就绪/被拦截），把按钮变回“朗读”以便手动触发
+      // 计时兜底：无论 onboundary 是否触发，都按估算语速推进光标/整行高亮
+      ttsHighlightBaseTime = performance.now();
+      startTtsTimer(cps);
+      // 看门狗：1.5s 内若实际未开始朗读（语音未就绪/被拦截），把按钮变回“朗读”并停掉计时兜底，避免无声时空转光标
       setTimeout(function () {
         if (ttsUtterance === u && !window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
           const tb = document.getElementById('ttsToggle');
           if (tb) tb.textContent = '朗读';
+          stopTtsTimer();
         }
       }, 1500);
     }
@@ -7793,9 +7837,15 @@
         toggleBtn.onclick = () => {
           if (ttsUtterance && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
             window.speechSynthesis.pause();
+            // 暂停时冻结计时基准，避免光标在暂停期间偷偷前进
+            stopTtsTimer();
+            ttsPausedElapsed = performance.now() - ttsHighlightBaseTime;
             toggleBtn.textContent = '继续';
           } else if (ttsUtterance && window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
+            // 继续时按暂停时长回拨基准，光标从原位置接着走
+            ttsHighlightBaseTime = performance.now() - ttsPausedElapsed;
+            startTtsTimer(ttsHighlightCps);
             toggleBtn.textContent = '暂停';
           } else {
             // 未开始或已结束：从头朗读全文
@@ -7840,6 +7890,7 @@
     }
 
     function onTTSend() {
+      stopTtsTimer();
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
       document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => d.classList.remove('tts-line-active'));
       const toggleBtn = document.getElementById('ttsToggle');
