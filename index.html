@@ -7694,7 +7694,8 @@
       u.lang = 'zh-CN';
       u.rate = ttsRate;
       // 估算每秒字符数（中文），作为「无 onboundary 时」的计时兜底基准
-      const cps = 4.5 * ttsRate;
+      // 实测部分手机/微信浏览器朗读比桌面慢，系数取 3.5 更贴近真实语速，避免光标明显超前
+      const cps = 3.5 * ttsRate;
       ttsApplyHighlight = applyTtsHighlight;
       u.onboundary = function (e) {
         const i = e.charIndex;
@@ -7711,6 +7712,10 @@
         const sw = document.getElementById('detailTtsStatus');
         if (sw) sw.style.display = 'block';
         if (onEnd) onEnd();
+      };
+      u.onstart = function () {
+        // 真正开始出声时把计时基准对齐到此刻，抵消“加载语音”的启动延迟，避免光标一开始就提前
+        ttsHighlightBaseTime = performance.now();
       };
       ttsUtterance = u;
       // 仅在有正在进行的朗读时才取消，避免“刚取消又播放”导致首次无声
