@@ -7493,8 +7493,12 @@
             e.preventDefault();
             openAudioModal(item);
           });
-        } else if (item.medium === '文字' && item.description) {
-          // 文字作品（含外链的也先进本站详情朗读），详情页里再提供外链按钮
+        } else if (externalUrl && externalUrl !== '') {
+          // 抖音等外链：所有平台都走网页版（抖音分享页内再点"打开抖音"按钮唤起 App）
+          card.href = externalUrl;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+        } else if (item.medium === '文字') {
           card.href = '#work-' + item.id;
           card.addEventListener('click', e => {
             // 在用户点击手势内打开详情并自动朗读，绕过浏览器自动播放限制
@@ -7502,11 +7506,6 @@
             showDetail(item.id, true);
             history.replaceState(null, '', '#work-' + item.id);
           });
-        } else if (externalUrl && externalUrl !== '') {
-          // 抖音等外链：所有平台都走网页版（抖音分享页内再点"打开抖音"按钮唤起 App）
-          card.href = externalUrl;
-          card.target = '_blank';
-          card.rel = 'noopener noreferrer';
         } else if (item.thumbnail && item.thumbnail !== '') {
           card.href = item.thumbnail;
           card.target = '_blank';
@@ -7815,7 +7814,10 @@
       // 先重置 cta 显示状态（防止上一个视频号作品把 display:none 留到这里）
       cta.style.display = '';
       qrBox.style.display = 'none';
-      if (workUrl && workUrl !== '' && isWeixinVideoUrl(workUrl) && !isMobileOrWechat()) {
+      if (work.medium === '文字') {
+        // 文字作品（含外链）：正文已在上方，外链文字作品直接跳原平台，此处不显示外链按钮
+        cta.style.display = 'none';
+      } else if (workUrl && workUrl !== '' && isWeixinVideoUrl(workUrl) && !isMobileOrWechat()) {
         // 视频号链接 + 桌面浏览器：电脑只能扫码 → 显示二维码，隐藏跳转按钮
         cta.style.display = 'none';
         qrBox.style.display = '';
