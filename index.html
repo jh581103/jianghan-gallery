@@ -544,13 +544,16 @@
     }
     .detail-meta {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      flex-wrap: nowrap;
+      gap: 8px;
       padding: 0 24px 16px;
-      font-size: 13px;
+      font-size: 12px;
       color: #5a4a30;
       align-items: center;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .detail-meta::-webkit-scrollbar { display: none; }
     .detail-desc {
       padding: 0 24px 20px;
       font-size: 15px;
@@ -579,23 +582,23 @@
     /* 朗读控制条（移入 meta 行右侧，日期之后） */
     .tts-controls {
       display: inline-flex;
-      gap: 5px;
+      gap: 3px;
       align-items: center;
       flex-wrap: nowrap;
-      margin-left: 6px;
+      margin-left: 4px;
     }
     /* 详情页 meta 行内的朗读控制按钮：缩小，单排呈现 */
     .tts-controls .tts-btn {
-      padding: 3px 7px;
-      font-size: 12px;
+      padding: 2px 6px;
+      font-size: 11px;
       border-radius: 6px;
     }
     .tts-controls .tts-label {
-      font-size: 12px;
-      margin-left: 2px;
+      font-size: 11px;
+      margin-left: 1px;
     }
     .tts-controls .tts-speeds {
-      gap: 4px;
+      gap: 3px;
     }
     /* 朗读状态文字（位于正文下方） */
     .detail-tts-status {
@@ -869,7 +872,7 @@
         <div id="ttsControls" class="tts-controls" style="display:none;">
           <button id="ttsToggle" class="tts-btn">暂停</button>
           <button id="ttsStop" class="tts-btn">停止</button>
-          <button id="ttsSel" class="tts-btn">朗读选中</button>
+          <button id="ttsSel" class="tts-btn">选读</button>
           <span class="tts-label">语速</span>
           <span id="ttsSpeed" class="tts-speeds"></span>
         </div>
@@ -7721,7 +7724,7 @@
           const sel = getSelectedSpans();
           if (!sel) {
             const se = document.getElementById('ttsStatus');
-            if (se) se.textContent = '请在正文里先选中要朗读的文字（长按/拖动选择一段或几行）';
+            if (se) se.textContent = '请先在正文里选中要朗读的文字（长按/拖动选择一段或几行），再点「选读」';
             const sw = document.getElementById('detailTtsStatus');
             if (sw) sw.style.display = 'block';
             return;
