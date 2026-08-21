@@ -577,6 +577,15 @@
     /* 朗读：按行包裹，落款行右对齐靠右下角 */
     .detail-desc.text-content .tts-line {
       white-space: pre-wrap;
+      border-radius: 4px;
+      transition: background-color 0.15s ease;
+    }
+    /* 朗读：当前正在播放的整行高亮，方便一眼看出读到哪一行 */
+    .detail-desc.text-content .tts-line.tts-line-active {
+      background: rgba(74, 144, 226, 0.10);
+    }
+    .detail-desc.text-content .tts-signature.tts-line-active {
+      background: rgba(74, 144, 226, 0.06);
     }
     .detail-desc.text-content .tts-signature {
       text-align: right;
@@ -585,10 +594,25 @@
     .detail-desc.text-content .tts-line-break {
       display: none;
     }
-    /* 朗读：当前句高亮 */
+    /* 朗读：当前句高亮 + 跟随声音同步的闪烁光标 */
     .detail-desc .tts-char.tts-active {
       background: #fff3a8;
       border-radius: 2px;
+      position: relative;
+    }
+    .detail-desc .tts-char.tts-active::after {
+      content: '';
+      position: absolute;
+      right: -1px;
+      top: 0.12em;
+      width: 2px;
+      height: 1.1em;
+      background: #e53935;
+      border-radius: 1px;
+      animation: tts-caret-blink 1.1s steps(1, end) infinite;
+    }
+    @keyframes tts-caret-blink {
+      50% { opacity: 0; }
     }
     /* 朗读控制条（移入 meta 行右侧，日期之后） */
     .tts-controls {
@@ -7615,6 +7639,7 @@
       try { window.speechSynthesis.cancel(); } catch (e) {}
       ttsUtterance = null;
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
+      try { document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => d.classList.remove('tts-line-active')); } catch (e) {}
       ttsSpans = [];
     }
 
@@ -7622,6 +7647,7 @@
     // ttsHighlightSpans 决定高亮范围（全文 or 选中的部分），随朗读目标切换
     function speakText(text, onEnd) {
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
+      document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => d.classList.remove('tts-line-active'));
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'zh-CN';
       u.rate = ttsRate;
@@ -7632,6 +7658,10 @@
           const span = ttsHighlightSpans[i];
           span.classList.add('tts-active');
           span.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          // 同步高亮「当前正在朗读的整行」，方便一眼看出读到哪一行
+          const lineDiv = (span.parentElement && span.parentElement.classList && span.parentElement.classList.contains('tts-line')) ? span.parentElement : null;
+          document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => { if (d !== lineDiv) d.classList.remove('tts-line-active'); });
+          if (lineDiv) lineDiv.classList.add('tts-line-active');
         }
       };
       u.onend = function () { if (onEnd) onEnd(); };
@@ -7811,6 +7841,7 @@
 
     function onTTSend() {
       ttsSpans.forEach(s => s.classList.remove('tts-active'));
+      document.querySelectorAll('.detail-desc .tts-line.tts-line-active').forEach(d => d.classList.remove('tts-line-active'));
       const toggleBtn = document.getElementById('ttsToggle');
       if (toggleBtn) toggleBtn.textContent = '暂停';
       const se = document.getElementById('ttsStatus');
