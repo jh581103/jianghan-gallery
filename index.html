@@ -574,6 +574,17 @@
       color: #8a7a60;
       font-style: italic;
     }
+    /* 朗读：按行包裹，落款行右对齐靠右下角 */
+    .detail-desc.text-content .tts-line {
+      white-space: pre-wrap;
+    }
+    .detail-desc.text-content .tts-signature {
+      text-align: right;
+    }
+    /* 行尾换行占位（维持字符位置与朗读文本一致，不显示） */
+    .detail-desc.text-content .tts-line-break {
+      display: none;
+    }
     /* 朗读：当前句高亮 */
     .detail-desc .tts-char.tts-active {
       background: #fff3a8;
@@ -899,7 +910,7 @@
       id: 543,
       title: "余秋雨金句",
       thumbnail: "thumbnails/寻觅中华金句.jpg",
-      description: "　　世界上确实找不到另外一个民族，一代代统治者都那么在乎历史渊源，那么在乎血缘根脉，那么在乎华夏文明。\n\n　　——余秋雨《寻觅中华》",
+      description: "　　世界上确实找不到另外一个民族，一代代统治者都那么在乎历史渊源，那么在乎血缘根脉，那么在乎华夏文明。\n\n——余秋雨《寻觅中华》",
       tags: ["读悟", "金句", "文字"],
       medium: "文字",
       platform: "本站",
@@ -7662,15 +7673,32 @@
       stopTTS();
       const descEl = document.getElementById('detailDesc');
       const text = (work.description || '').replace(/\n\n+/g, '\n');
-      // 按字符拆成小片段，便于随朗读进度高亮 + 滚动
+      // 按行拆块：每行一个 block 容器，行内再逐字符拆 span（供朗读高亮 + 滚动）；
+      // 行尾换行保留为不可见占位 span，以维持与朗读文本（含 \n）的字符位置一致，避免高亮错位。
+      // 落款行（去掉前导空格后以「——」开头）加 tts-signature 类，右对齐靠右下角。
       descEl.textContent = '';
       ttsSpans = [];
-      Array.from(text).forEach(ch => {
-        const span = document.createElement('span');
-        span.textContent = ch;
-        span.className = 'tts-char';
-        descEl.appendChild(span);
-        ttsSpans.push(span);
+      const ttsLines = text.split('\n');
+      ttsLines.forEach((line, li) => {
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'tts-line';
+        const lineCore = line.replace(/^[　\s]+/, '');
+        if (/^——/.test(lineCore)) lineDiv.classList.add('tts-signature');
+        Array.from(line).forEach(ch => {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'tts-char';
+          lineDiv.appendChild(span);
+          ttsSpans.push(span);
+        });
+        descEl.appendChild(lineDiv);
+        if (li < ttsLines.length - 1) {
+          const brk = document.createElement('span');
+          brk.textContent = '\n';
+          brk.className = 'tts-char tts-line-break';
+          descEl.appendChild(brk);
+          ttsSpans.push(brk);
+        }
       });
       ttsHighlightSpans = ttsSpans;
       descEl.classList.add('text-content');
