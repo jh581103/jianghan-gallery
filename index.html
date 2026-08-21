@@ -967,7 +967,7 @@
       title: "真正的独立不是财务独立",
       thumbnail: "thumbnails/真正的独立不是财务独立.jpg",
       description: "真正的独立不是财务独立，而是人格与精神的自立。吾善养吾浩然之气，在哲思中探寻独立的真意。",
-      url: "https://page.om.qq.com/page/OrKsMISvOr2Jp0VBvv2W-PpQ0?share_channel=6&#",
+      url: "https://page.om.qq.com/page/OrKsMISvOr2Jp0VBvv2W-PpQ0?share_channel=6",
       tags: ["哲思", "人生", "视频"],
       medium: "视频",
       platform: "企鹅号",
@@ -7496,6 +7496,7 @@
           card.href = externalUrl;
           card.target = '_blank';
           card.rel = 'noopener noreferrer';
+          card.referrerPolicy = 'no-referrer';
         } else if (item.medium === '文字') {
           card.href = '#work-' + item.id;
           card.addEventListener('click', e => {
