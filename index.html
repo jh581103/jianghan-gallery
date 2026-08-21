@@ -7694,8 +7694,9 @@
       u.lang = 'zh-CN';
       u.rate = ttsRate;
       // 估算每秒字符数（中文），作为「无 onboundary 时」的计时兜底基准
-      // 按用户端实测校准：3.5 偏快、2.5 偏慢，取中位数 3.0 贴合真实语速
-      const cps = 3.0 * ttsRate;
+      // 三次实测校准：3.5 偏快、2.5 偏慢、3.0 开头同步但结尾偏慢（线性漂移），
+      // 取 3.3 贴近真实平均语速，使整段（尤其结尾）都基本同步
+      const cps = 3.3 * ttsRate;
       ttsApplyHighlight = applyTtsHighlight;
       u.onboundary = function (e) {
         const i = e.charIndex;
