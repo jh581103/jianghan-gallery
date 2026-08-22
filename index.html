@@ -786,6 +786,150 @@
     .view-count.loading .view-num {
       opacity: 0.5;
     }
+
+    /* ========== 访客墙 ========== */
+    .guest-wall {
+      margin: 24px 0 40px;
+      padding: 20px;
+      background: rgba(20, 14, 8, 0.45);
+      border: 1px solid rgba(201, 160, 66, 0.18);
+      border-radius: 16px;
+      backdrop-filter: blur(6px);
+    }
+    .guest-wall-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      color: #f0e6d2;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .guest-wall-title span { color: #c9a042; }
+    .guest-add-btn {
+      padding: 6px 14px;
+      background: rgba(201, 160, 66, 0.2);
+      border: 1px solid rgba(201, 160, 66, 0.4);
+      border-radius: 20px;
+      color: #f0e6d2;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .guest-add-btn:hover { background: rgba(201, 160, 66, 0.35); }
+    .guest-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+    .guest-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 72px;
+    }
+    .guest-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(201, 160, 66, 0.35);
+      background: rgba(255,255,255,0.08);
+    }
+    .guest-name {
+      font-size: 12px;
+      color: #e6d9c0;
+      text-align: center;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .guest-empty {
+      color: #8b7355;
+      font-size: 13px;
+      text-align: center;
+      padding: 16px;
+    }
+    .guest-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .guest-modal.active { display: flex; }
+    .guest-modal-box {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 360px;
+      width: 100%;
+      padding: 24px;
+      color: #333;
+      position: relative;
+    }
+    .guest-modal-box h3 {
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: #222;
+    }
+    .guest-modal-box label {
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+    .guest-modal-box input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 14px;
+      box-sizing: border-box;
+    }
+    .guest-modal-box input[type="file"] {
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+    .guest-preview {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #c9a042;
+      display: none;
+      margin: 0 auto 14px;
+    }
+    .guest-modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .guest-modal-actions button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .guest-cancel { background: #eee; color: #555; }
+    .guest-submit { background: #c9a042; color: #fff; }
+    .guest-close {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      font-size: 24px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -795,6 +939,23 @@
     <button onclick="closeAudioModal()" style="position:absolute;top:10px;right:12px;font-size:28px;border:none;background:none;cursor:pointer;line-height:1;color:#666;">&times;</button>
     <div id="audioModalContent"></div>
   </div>
+
+<!-- 访客留名浮层 -->
+<div class="guest-modal" id="guestModal">
+  <div class="guest-modal-box">
+    <button class="guest-close" onclick="closeGuestModal()">&times;</button>
+    <h3>留名来访墙</h3>
+    <label for="guestName">昵称（必填）</label>
+    <input type="text" id="guestName" placeholder="怎么称呼你？" maxlength="20">
+    <label for="guestAvatar">头像（选填，支持 JPG/PNG）</label>
+    <input type="file" id="guestAvatar" accept="image/*">
+    <img class="guest-preview" id="guestPreview" alt="预览">
+    <div class="guest-modal-actions">
+      <button class="guest-cancel" onclick="closeGuestModal()">取消</button>
+      <button class="guest-submit" onclick="submitGuest()">提交</button>
+    </div>
+  </div>
+</div>
 </div>
 
   <!-- ========== 背景层 ========== -->
@@ -888,6 +1049,15 @@
     <!-- 作品流 -->
     <div class="gallery" id="gallery"></div>
     
+    <!-- 访客墙 -->
+    <div class="guest-wall" id="guestWall" style="display:none;">
+      <div class="guest-wall-title">
+        <span>最近来访</span>
+        <button class="guest-add-btn" id="guestAddBtn" onclick="openGuestModal()">我也留名</button>
+      </div>
+      <div class="guest-list" id="guestList"></div>
+    </div>
+
     <!-- 详情页 -->
     <div class="detail-page" id="detailPage" style="display:none;">
       <div class="detail-container">
@@ -8154,47 +8324,189 @@
     
     // === 浏览量计数：localStorage 存储，每设备独立计数 ===
     // 注意：每个浏览器/设备的 localStorage 是隔离的，所以"全家看 1 次" = 你在手机上 +1 + 电脑 +1 + 儿子手机 +1
+    // === 访客墙 ===
+    const GUEST_SENT_KEY = 'jh-guest-sent';
+    let guestAvatarDataUrl = '';
+
+    function initGuestWall() {
+      const wall = document.getElementById('guestWall');
+      if (!wall) return;
+      wall.style.display = 'block';
+      loadGuests();
+      const fileInput = document.getElementById('guestAvatar');
+      const preview = document.getElementById('guestPreview');
+      if (fileInput && preview) {
+        fileInput.addEventListener('change', function() {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) { preview.style.display = 'none'; guestAvatarDataUrl = ''; return; }
+          if (file.size > 5 * 1024 * 1024) { alert('图片不能超过 5MB'); fileInput.value = ''; return; }
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            compressAvatar(e.target.result, 200, 200, 0.8, function(dataUrl) {
+              guestAvatarDataUrl = dataUrl;
+              preview.src = dataUrl;
+              preview.style.display = 'block';
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    function loadGuests() {
+      fetch('/api/guests')
+        .then(r => r.json())
+        .then(list => {
+          const container = document.getElementById('guestList');
+          if (!container) return;
+          if (!Array.isArray(list) || list.length === 0) {
+            container.innerHTML = '<div class="guest-empty">还没有访客留名，来做第一个吧～</div>';
+            return;
+          }
+          container.innerHTML = list.map(g => {
+            const avatar = g.avatar || defaultAvatar(g.name);
+            const time = formatGuestTime(g.ts);
+            return `<div class="guest-item" title="${escapeHtml(g.name)} · ${time}">
+              <img src="${escapeHtml(avatar)}" class="guest-avatar" alt="${escapeHtml(g.name)}">
+              <div class="guest-name">${escapeHtml(g.name)}</div>
+            </div>`;
+          }).join('');
+        })
+        .catch(() => {});
+    }
+
+    function defaultAvatar(name) {
+      const char = (name || '?').charAt(0);
+      const canvas = document.createElement('canvas');
+      canvas.width = 64; canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#c9a042';
+      ctx.beginPath(); ctx.arc(32, 32, 32, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(char, 32, 32);
+      return canvas.toDataURL();
+    }
+
+    function formatGuestTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const now = new Date();
+      const diff = Math.floor((now - d) / 1000);
+      if (diff < 60) return '刚刚';
+      if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+      if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+      return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    }
+
+    function compressAvatar(dataUrl, maxWidth, maxHeight, quality, callback) {
+      const img = new Image();
+      img.onload = function() {
+        let w = img.width, h = img.height;
+        if (w > h && w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        else if (h > maxHeight) { w = Math.round(w * maxHeight / h); h = maxHeight; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = dataUrl;
+    }
+
+    function openGuestModal() {
+      const modal = document.getElementById('guestModal');
+      if (modal) modal.classList.add('active');
+      const input = document.getElementById('guestName');
+      if (input) input.focus();
+    }
+
+    function closeGuestModal() {
+      const modal = document.getElementById('guestModal');
+      if (modal) modal.classList.remove('active');
+      const preview = document.getElementById('guestPreview');
+      if (preview) { preview.style.display = 'none'; preview.src = ''; }
+      const fileInput = document.getElementById('guestAvatar');
+      if (fileInput) fileInput.value = '';
+      guestAvatarDataUrl = '';
+    }
+
+    function submitGuest() {
+      const nameInput = document.getElementById('guestName');
+      const name = (nameInput && nameInput.value || '').trim();
+      if (!name) { alert('请填一个昵称'); return; }
+      if (name.length > 20) { alert('昵称不能超过 20 个字'); return; }
+      const avatar = guestAvatarDataUrl || defaultAvatar(name);
+      fetch('/api/guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, avatar })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { alert(data.error); return; }
+        try { localStorage.setItem(GUEST_SENT_KEY, JSON.stringify({ name, avatar })); } catch (e) {}
+        guestAvatarDataUrl = '';
+        if (nameInput) nameInput.value = '';
+        closeGuestModal();
+        loadGuests();
+      })
+      .catch(() => { alert('提交失败，请稍后再试'); });
+    }
+
     function setupViewCount() {
       const elements = document.querySelectorAll('.view-count');
       if (elements.length === 0) return;
 
-      // 读取本地存储的所有作品计数
-      var STORAGE_KEY = 'jh-views';
-      var counts = {};
-      try {
-        counts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      } catch (e) {
-        counts = {};
+      const SENT_KEY = 'jh-views-sent';
+      let sent = {};
+      try { sent = JSON.parse(localStorage.getItem(SENT_KEY) || '{}'); } catch (e) { sent = {}; }
+
+      // 批量拉取所有作品的当前真实播放量
+      const workIds = Array.from(elements).map(el => el.dataset.workId).filter(Boolean);
+      if (workIds.length > 0) {
+        fetch('/api/play?work_ids=' + workIds.join(','))
+          .then(r => r.json())
+          .then(counts => {
+            elements.forEach(el => {
+              const id = el.dataset.workId;
+              const count = (counts && counts[id]) || 0;
+              const numEl = el.querySelector('.view-num');
+              if (numEl) numEl.textContent = count;
+              el.classList.remove('loading');
+              el.classList.add('loaded');
+            });
+          })
+          .catch(() => {
+            elements.forEach(el => el.classList.add('error'));
+          });
       }
 
-      // 先把已存的数字显示出来
-      elements.forEach(function(el) {
-        var workId = el.dataset.workId;
-        if (!workId) return;
-        var stored = counts[workId] || 0;
-        if (stored > 0) {
-          var numEl = el.querySelector('.view-num');
-          if (numEl) numEl.textContent = stored;
-          el.classList.remove('loading');
-          el.classList.add('loaded');
-        }
-      });
-
-      // 卡片进入视窗 20% 时 +1（同一会话内每张卡片只数一次）
+      // 卡片进入视窗 20% 时上报一次真实播放（同一会话内每张卡片只数一次）
       var observer = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
           if (!entry.isIntersecting) return;
           var el = entry.target;
           var workId = el.dataset.workId;
-          if (!workId) return;
-          counts[workId] = (counts[workId] || 0) + 1;
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(counts));
-          } catch (e) {}
+          if (!workId || sent[workId]) {
+            observer.unobserve(el);
+            return;
+          }
           var numEl = el.querySelector('.view-num');
-          if (numEl) numEl.textContent = counts[workId];
+          var current = parseInt(numEl && numEl.textContent, 10) || 0;
+          if (numEl) numEl.textContent = current + 1;
           el.classList.remove('loading', 'error');
           el.classList.add('loaded');
+          fetch('/api/play', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ work_id: parseInt(workId, 10) })
+          }).then(r => r.json()).then(data => {
+            if (data.count != null && numEl) numEl.textContent = data.count;
+          }).catch(() => {});
+          sent[workId] = true;
+          try { localStorage.setItem(SENT_KEY, JSON.stringify(sent)); } catch (e) {}
           observer.unobserve(el);
         });
       }, { threshold: 0.2 });
@@ -8207,6 +8519,7 @@
     const isSharedCat = !!(_cat && _cat !== 'all' && sectionMap[_cat]);
     applySection(_cat || 'all', false, isSharedCat);
     setupViewCount();
+    initGuestWall();
     handleHash();
   </script>
 
