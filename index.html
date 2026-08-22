@@ -851,7 +851,13 @@
       font-size: 10px;
       color: #c9a042;
       text-align: center;
-      margin-top: 2px;
+      margin-top: 3px;
+      display: inline-block;
+      padding: 1px 7px;
+      border: 1px solid rgba(201, 160, 66, 0.45);
+      border-radius: 11px;
+      background: rgba(201, 160, 66, 0.14);
+      white-space: nowrap;
     }
     .guest-empty {
       color: #8b7355;
@@ -8386,7 +8392,7 @@
           container.innerHTML = list.map(g => {
             const avatar = g.avatar || defaultAvatar(g.name);
             const time = formatGuestTime(g.ts);
-            const times = (g.visit_count && g.visit_count > 1) ? `<span class="guest-times">第 ${g.visit_count} 次来</span>` : '';
+            const times = (g.visit_count && g.visit_count > 1) ? `<span class="guest-times">🔁 第 ${g.visit_count} 次来</span>` : '';
             return `<div class="guest-item" title="${escapeHtml(g.name)} · ${time}">
               <img src="${escapeHtml(avatar)}" class="guest-avatar" alt="${escapeHtml(g.name)}">
               <div class="guest-name">${escapeHtml(g.name)}</div>
