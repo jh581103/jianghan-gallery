@@ -1037,7 +1037,6 @@
     <div class="guest-wall" id="guestWall" style="display:none;">
       <div class="guest-wall-title">
         <span>最近来访 · 累计 <em id="guestTotal" style="font-style:normal;color:#c9a042;">0</em> 人</span>
-        <button class="guest-add-btn" id="guestAddBtn" onclick="startWechatLogin()">微信登录留真名</button>
       </div>
       <div class="guest-list" id="guestList"></div>
     </div>
@@ -8413,11 +8412,6 @@
       if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
       if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
       return (d.getMonth() + 1) + '月' + d.getDate() + '日';
-    }
-
-    function startWechatLogin() {
-      // 跳转后端发起微信网页授权；未配置时后端会提示
-      window.location.href = '/api/wechat/login';
     }
 
     function setupViewCount() {
