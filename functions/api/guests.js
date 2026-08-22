@@ -18,18 +18,19 @@ export async function onRequestPost(context) {
     if (avatar.length > 200000) {
       avatar = avatar.slice(0, 200000);
     }
-    // 按 visitor_id 去重：存在则更新，不存在则插入
+    // 按 visitor_id 去重并累加访问次数：存在则 +1 并更新时间，不存在则插入（首次=1）
     if (visitor_id) {
-      await env.DB.prepare('UPDATE guests SET ts = ?, name = ?, avatar = ? WHERE visitor_id = ?')
+      await env.DB.prepare('UPDATE guests SET ts = ?, name = ?, avatar = ?, visit_count = visit_count + 1 WHERE visitor_id = ?')
         .bind(Date.now(), name, avatar, visitor_id).run();
-      await env.DB.prepare('INSERT INTO guests (name, avatar, ts, visitor_id) SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM guests WHERE visitor_id = ?)')
+      await env.DB.prepare('INSERT INTO guests (name, avatar, ts, visitor_id, visit_count) SELECT ?, ?, ?, ?, 1 WHERE NOT EXISTS (SELECT 1 FROM guests WHERE visitor_id = ?)')
         .bind(name, avatar, Date.now(), visitor_id, visitor_id).run();
     } else {
-      await env.DB.prepare('INSERT INTO guests (name, avatar, ts, visitor_id) VALUES (?, ?, ?, ?)')
-        .bind(name, avatar, Date.now(), visitor_id || null).run();
+      await env.DB.prepare('INSERT INTO guests (name, avatar, ts, visitor_id, visit_count) VALUES (?, ?, ?, ?, 1)')
+        .bind(name, avatar, Date.now(), visitor_id || null, 1).run();
     }
     const cnt = await env.DB.prepare('SELECT COUNT(*) as total FROM guests').first();
-    return jsonResponse({ success: true, name, total: cnt ? cnt.total : 0 });
+    const vc = visitor_id ? (await env.DB.prepare('SELECT visit_count FROM guests WHERE visitor_id = ?').bind(visitor_id).first()) : null;
+    return jsonResponse({ success: true, name, total: cnt ? cnt.total : 0, visit_count: vc ? vc.visit_count : 1 });
   } catch (e) {
     return jsonResponse({ error: e.message }, 500);
   }
@@ -40,7 +41,7 @@ export async function onRequestGet(context) {
   try {
     const cnt = await env.DB.prepare('SELECT COUNT(*) as total FROM guests').first();
     const result = await env.DB.prepare(
-      'SELECT name, avatar, ts FROM guests ORDER BY ts DESC LIMIT 50'
+      'SELECT name, avatar, ts, visit_count FROM guests ORDER BY ts DESC LIMIT 50'
     ).all();
     return jsonResponse({ total: cnt ? cnt.total : 0, guests: result.results || [] });
   } catch (e) {

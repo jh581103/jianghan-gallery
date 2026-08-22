@@ -847,6 +847,12 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .guest-times {
+      font-size: 10px;
+      color: #c9a042;
+      text-align: center;
+      margin-top: 2px;
+    }
     .guest-empty {
       color: #8b7355;
       font-size: 13px;
@@ -8309,7 +8315,6 @@
     // 注意：每个浏览器/设备的 localStorage 是隔离的，所以"全家看 1 次" = 你在手机上 +1 + 电脑 +1 + 儿子手机 +1
     // === 访客墙（自动记录，无需点击） ===
     const GUEST_VISITOR_KEY = 'jh-visitor';
-    const GUEST_RECORDED_KEY = 'jh-visitor-recorded';
 
     function genVisitorId() {
       return 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
@@ -8338,13 +8343,14 @@
       if (!wall) return;
       wall.style.display = 'block';
       loadGuests();
-      // 自动记录本机访客（无需点击；后端按 visitor_id 去重）
+      // 每次进网站都计一次（按本机节流：30 分钟内不重复计，避免刷新刷出虚高）
       const v = getVisitor();
-      let recorded;
-      try { recorded = localStorage.getItem(GUEST_RECORDED_KEY); } catch (e) { recorded = null; }
-      if (recorded !== '1') {
+      let last = 0;
+      try { last = parseInt(localStorage.getItem('jh-last-visit-ts') || '0', 10); } catch (e) {}
+      const now = Date.now();
+      if (now - last > 30 * 60 * 1000) {
         recordVisitor(v, false);
-        try { localStorage.setItem(GUEST_RECORDED_KEY, '1'); } catch (e) {}
+        try { localStorage.setItem('jh-last-visit-ts', String(now)); } catch (e) {}
       }
     }
 
@@ -8380,9 +8386,11 @@
           container.innerHTML = list.map(g => {
             const avatar = g.avatar || defaultAvatar(g.name);
             const time = formatGuestTime(g.ts);
+            const times = (g.visit_count && g.visit_count > 1) ? `<span class="guest-times">第 ${g.visit_count} 次来</span>` : '';
             return `<div class="guest-item" title="${escapeHtml(g.name)} · ${time}">
               <img src="${escapeHtml(avatar)}" class="guest-avatar" alt="${escapeHtml(g.name)}">
               <div class="guest-name">${escapeHtml(g.name)}</div>
+              ${times}
             </div>`;
           }).join('');
         })
