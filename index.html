@@ -942,6 +942,89 @@
       cursor: pointer;
       color: #666;
     }
+    /* 顶部精简访客条 */
+    .top-guest-bar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0 18px;
+      padding: 10px 18px;
+      background: rgba(20, 14, 8, 0.5);
+      border: 1px solid rgba(201, 160, 66, 0.28);
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+      flex-wrap: wrap;
+    }
+    .tgb-icon { font-size: 18px; line-height: 1; }
+    .tgb-text {
+      color: #f0e6d2;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .tgb-text em {
+      font-style: normal;
+      color: #c9a042;
+      font-size: 17px;
+    }
+    .tgb-avatars {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .tgb-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(201, 160, 66, 0.4);
+      background: rgba(255,255,255,0.08);
+      flex: 0 0 auto;
+    }
+    .tgb-more {
+      color: #c9a042;
+      font-size: 13px;
+      text-decoration: none;
+      white-space: nowrap;
+      padding: 4px 10px;
+      border: 1px solid rgba(201, 160, 66, 0.4);
+      border-radius: 999px;
+      transition: background 0.2s;
+    }
+    .tgb-more:hover { background: rgba(201, 160, 66, 0.18); }
+    /* 右下角悬浮“来访”按钮 */
+    .float-guest-btn {
+      position: fixed;
+      right: 20px;
+      bottom: 22px;
+      z-index: 1500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 16px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #c9a042, #d8b85a);
+      color: #2a1d0a;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .float-guest-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.42);
+    }
+    .float-guest-btn .fgb-label { line-height: 1; }
+    @media (max-width: 600px) {
+      .float-guest-btn { right: 14px; bottom: 16px; padding: 10px 13px; font-size: 14px; }
+      .top-guest-bar { gap: 8px; padding: 8px 12px; }
+      .tgb-text { font-size: 13px; }
+    }
   </style>
 </head>
 <body>
@@ -979,6 +1062,14 @@
       <p class="total-count" id="total-count"><span class="stat-item">作品总数:<span class="stat-num" id="total-num">73</span></span><span class="stat-item">视频:<span class="stat-num" id="stat-video">59</span></span><span class="stat-item">音频:<span class="stat-num" id="stat-audio">0</span></span><span class="stat-item">图片:<span class="stat-num" id="stat-image">6</span></span><span class="stat-item">文字:<span class="stat-num" id="stat-text">1</span></span></p>
     </div>
     
+    <!-- 顶部精简访客条 -->
+    <div class="top-guest-bar" id="topGuestBar" style="display:none;">
+      <span class="tgb-icon">👥</span>
+      <span class="tgb-text">累计 <em id="tgbTotal">0</em> 人来访</span>
+      <div class="tgb-avatars" id="tgbAvatars"></div>
+      <a class="tgb-more" href="#guestWall" onclick="try{document.getElementById('guestWall').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}return false;">查看全部 ↓</a>
+    </div>
+
     <!-- 顶部分区导航 -->
     <nav class="section-nav" id="sectionNav">
       <button class="section-btn active" data-section="all">📚 全部</button>
@@ -1052,6 +1143,10 @@
       </div>
       <div class="guest-list" id="guestList"></div>
     </div>
+
+    <!-- 悬浮：一键查看来访 -->
+    <button class="float-guest-btn" id="floatGuestBtn" type="button" title="查看来访" aria-label="查看来访"
+      onclick="try{document.getElementById('guestWall').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}">👥<span class="fgb-label">来访</span></button>
 
     <!-- 详情页 -->
     <div class="detail-page" id="detailPage" style="display:none;">
@@ -8385,6 +8480,20 @@
           const list = Array.isArray(res) ? res : (res.guests || []);
           const total = Array.isArray(res) ? list.length : (res.total || 0);
           updateGuestTotal(total);
+          // 同步顶部精简访客条
+          try {
+            const topBar = document.getElementById('topGuestBar');
+            const tgbTotal = document.getElementById('tgbTotal');
+            const tgbAvatars = document.getElementById('tgbAvatars');
+            if (topBar) topBar.style.display = 'flex';
+            if (tgbTotal) tgbTotal.textContent = total;
+            if (tgbAvatars) {
+              tgbAvatars.innerHTML = list.slice(0, 8).map(function(g) {
+                const av = g.avatar || defaultAvatar(g.name);
+                return '<img src="' + escapeHtml(av) + '" class="tgb-avatar" alt="' + escapeHtml(g.name) + '" title="' + escapeHtml(g.name) + '">';
+              }).join('');
+            }
+          } catch (e) {}
           if (list.length === 0) {
             container.innerHTML = '<div class="guest-empty">还没有访客来过，等你第一个～</div>';
             return;
