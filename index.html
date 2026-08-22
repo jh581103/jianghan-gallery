@@ -940,22 +940,6 @@
     <div id="audioModalContent"></div>
   </div>
 
-<!-- 访客留名浮层 -->
-<div class="guest-modal" id="guestModal">
-  <div class="guest-modal-box">
-    <button class="guest-close" onclick="closeGuestModal()">&times;</button>
-    <h3>留名来访墙</h3>
-    <label for="guestName">昵称（必填）</label>
-    <input type="text" id="guestName" placeholder="怎么称呼你？" maxlength="20">
-    <label for="guestAvatar">头像（选填，支持 JPG/PNG）</label>
-    <input type="file" id="guestAvatar" accept="image/*">
-    <img class="guest-preview" id="guestPreview" alt="预览">
-    <div class="guest-modal-actions">
-      <button class="guest-cancel" onclick="closeGuestModal()">取消</button>
-      <button class="guest-submit" onclick="submitGuest()">提交</button>
-    </div>
-  </div>
-</div>
 </div>
 
   <!-- ========== 背景层 ========== -->
@@ -1052,8 +1036,8 @@
     <!-- 访客墙 -->
     <div class="guest-wall" id="guestWall" style="display:none;">
       <div class="guest-wall-title">
-        <span>最近来访</span>
-        <button class="guest-add-btn" id="guestAddBtn" onclick="openGuestModal()">我也留名</button>
+        <span>最近来访 · 累计 <em id="guestTotal" style="font-style:normal;color:#c9a042;">0</em> 人</span>
+        <button class="guest-add-btn" id="guestAddBtn" onclick="startWechatLogin()">微信登录留真名</button>
       </div>
       <div class="guest-list" id="guestList"></div>
     </div>
@@ -8324,43 +8308,74 @@
     
     // === 浏览量计数：localStorage 存储，每设备独立计数 ===
     // 注意：每个浏览器/设备的 localStorage 是隔离的，所以"全家看 1 次" = 你在手机上 +1 + 电脑 +1 + 儿子手机 +1
-    // === 访客墙 ===
-    const GUEST_SENT_KEY = 'jh-guest-sent';
-    let guestAvatarDataUrl = '';
+    // === 访客墙（自动记录 + 微信登录留真名） ===
+    const GUEST_VISITOR_KEY = 'jh-visitor';
+    const GUEST_RECORDED_KEY = 'jh-visitor-recorded';
+
+    function genVisitorId() {
+      return 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function randomCuteName() {
+      const a = ['悠然','微光','听风','拾光','清欢','南风','星河','半山','浅夏','云栖','初见','知秋','向暖','归舟','拾贰','木棉','远舟','小满','谷雨','白露'];
+      const b = ['的云','的信笺','的树','的猫','的灯','的行者','的旅人','的歌','的书','的画','的风','的月','的溪','的萤火','的舟','的鹿'];
+      return a[Math.floor(Math.random()*a.length)] + b[Math.floor(Math.random()*b.length)];
+    }
+
+    // 取/生成本机访客身份（稳定，按浏览器）
+    function getVisitor() {
+      let v;
+      try { v = JSON.parse(localStorage.getItem(GUEST_VISITOR_KEY) || 'null'); } catch (e) { v = null; }
+      if (!v || !v.id) {
+        v = { id: genVisitorId(), name: randomCuteName(), avatar: '' };
+        try { localStorage.setItem(GUEST_VISITOR_KEY, JSON.stringify(v)); } catch (e) {}
+      }
+      if (!v.avatar) v.avatar = defaultAvatar(v.name);
+      return v;
+    }
 
     function initGuestWall() {
       const wall = document.getElementById('guestWall');
       if (!wall) return;
       wall.style.display = 'block';
       loadGuests();
-      const fileInput = document.getElementById('guestAvatar');
-      const preview = document.getElementById('guestPreview');
-      if (fileInput && preview) {
-        fileInput.addEventListener('change', function() {
-          const file = fileInput.files && fileInput.files[0];
-          if (!file) { preview.style.display = 'none'; guestAvatarDataUrl = ''; return; }
-          if (file.size > 5 * 1024 * 1024) { alert('图片不能超过 5MB'); fileInput.value = ''; return; }
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            compressAvatar(e.target.result, 200, 200, 0.8, function(dataUrl) {
-              guestAvatarDataUrl = dataUrl;
-              preview.src = dataUrl;
-              preview.style.display = 'block';
-            });
-          };
-          reader.readAsDataURL(file);
-        });
+      // 自动记录本机访客（无需点击；后端按 visitor_id 去重）
+      const v = getVisitor();
+      let recorded;
+      try { recorded = localStorage.getItem(GUEST_RECORDED_KEY); } catch (e) { recorded = null; }
+      if (recorded !== '1') {
+        recordVisitor(v, false);
+        try { localStorage.setItem(GUEST_RECORDED_KEY, '1'); } catch (e) {}
       }
+    }
+
+    function recordVisitor(v, isReal) {
+      fetch('/api/guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: v.name, avatar: v.avatar, visitor_id: v.id, real: !!isReal })
+      }).then(r => r.json()).then(data => {
+        if (data && data.total != null) updateGuestTotal(data.total);
+        loadGuests();
+      }).catch(() => {});
+    }
+
+    function updateGuestTotal(n) {
+      const el = document.getElementById('guestTotal');
+      if (el) el.textContent = n;
     }
 
     function loadGuests() {
       fetch('/api/guests')
         .then(r => r.json())
-        .then(list => {
+        .then(res => {
           const container = document.getElementById('guestList');
           if (!container) return;
-          if (!Array.isArray(list) || list.length === 0) {
-            container.innerHTML = '<div class="guest-empty">还没有访客留名，来做第一个吧～</div>';
+          const list = Array.isArray(res) ? res : (res.guests || []);
+          const total = Array.isArray(res) ? list.length : (res.total || 0);
+          updateGuestTotal(total);
+          if (list.length === 0) {
+            container.innerHTML = '<div class="guest-empty">还没有访客来过，等你第一个～</div>';
             return;
           }
           container.innerHTML = list.map(g => {
@@ -8400,59 +8415,9 @@
       return (d.getMonth() + 1) + '月' + d.getDate() + '日';
     }
 
-    function compressAvatar(dataUrl, maxWidth, maxHeight, quality, callback) {
-      const img = new Image();
-      img.onload = function() {
-        let w = img.width, h = img.height;
-        if (w > h && w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-        else if (h > maxHeight) { w = Math.round(w * maxHeight / h); h = maxHeight; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        callback(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = dataUrl;
-    }
-
-    function openGuestModal() {
-      const modal = document.getElementById('guestModal');
-      if (modal) modal.classList.add('active');
-      const input = document.getElementById('guestName');
-      if (input) input.focus();
-    }
-
-    function closeGuestModal() {
-      const modal = document.getElementById('guestModal');
-      if (modal) modal.classList.remove('active');
-      const preview = document.getElementById('guestPreview');
-      if (preview) { preview.style.display = 'none'; preview.src = ''; }
-      const fileInput = document.getElementById('guestAvatar');
-      if (fileInput) fileInput.value = '';
-      guestAvatarDataUrl = '';
-    }
-
-    function submitGuest() {
-      const nameInput = document.getElementById('guestName');
-      const name = (nameInput && nameInput.value || '').trim();
-      if (!name) { alert('请填一个昵称'); return; }
-      if (name.length > 20) { alert('昵称不能超过 20 个字'); return; }
-      const avatar = guestAvatarDataUrl || defaultAvatar(name);
-      fetch('/api/guests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, avatar })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) { alert(data.error); return; }
-        try { localStorage.setItem(GUEST_SENT_KEY, JSON.stringify({ name, avatar })); } catch (e) {}
-        guestAvatarDataUrl = '';
-        if (nameInput) nameInput.value = '';
-        closeGuestModal();
-        loadGuests();
-      })
-      .catch(() => { alert('提交失败，请稍后再试'); });
+    function startWechatLogin() {
+      // 跳转后端发起微信网页授权；未配置时后端会提示
+      window.location.href = '/api/wechat/login';
     }
 
     function setupViewCount() {
