@@ -416,7 +416,7 @@
     }
     .card-thumb {
       width: 100%;
-      aspect-ratio: 16/9;
+      aspect-ratio: 1/1;
       background: #fdf6e3;
       display: flex;
       align-items: center;
@@ -427,10 +427,25 @@
       overflow: hidden;
     }
     img.card-thumb {
+      object-fit: contain !important;
+      padding: 6px;
+    }
+    /* 2026-08-23 起新作品（id >= 543）使用 16:9 封面 */
+    .card-thumb-wide {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      height: 0;
+      background: #fdf6e3;
+      overflow: hidden;
+    }
+    .card-thumb-wide img {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      padding: 0;
     }
     .card-content {
       padding: 6px 8px 8px;
@@ -7902,10 +7917,14 @@
         const tagsHTML = item.tags.map(t => `<span class="card-tag">#${escapeHtml(t)}</span>`).join('');
         const viewCountHTML = `<span class="view-count loading" data-work-id="${item.id}"><span class="view-icon">👁</span><span class="view-num">—</span></span>`;
         const isAudio = item.medium === '音频';
+        const isWideThumb = item.id >= 543;
+        const wideCls = isWideThumb ? ' card-thumb-wide' : '';
         const thumbHTML = item.thumbnail
           ? (isAudio
-              ? `<div class="card-thumb" style="position:relative;"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;">${item.duration ? `<div style="position:absolute;bottom:6px;left:6px;padding:2px 6px;background:rgba(0,0,0,0.55);border-radius:4px;color:#fff;font-size:11px;line-height:1.4;text-shadow:0 1px 2px rgba(0,0,0,0.4);">${escapeHtml(item.duration)}</div>` : ''}<div style="position:absolute;bottom:6px;right:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);border-radius:50%;color:#fff;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,0.4);box-shadow:0 1px 4px rgba(0,0,0,0.2);">▶</div></div>`
-              : `<img src="${escapeHtml(item.thumbnail)}" class="card-thumb" style="object-fit:cover;">`)
+              ? `<div class="card-thumb${wideCls}" style="position:relative;"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;">${item.duration ? `<div style="position:absolute;bottom:6px;left:6px;padding:2px 6px;background:rgba(0,0,0,0.55);border-radius:4px;color:#fff;font-size:11px;line-height:1.4;text-shadow:0 1px 2px rgba(0,0,0,0.4);">${escapeHtml(item.duration)}</div>` : ''}<div style="position:absolute;bottom:6px;right:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);border-radius:50%;color:#fff;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,0.4);box-shadow:0 1px 4px rgba(0,0,0,0.2);">▶</div></div>`
+              : (isWideThumb
+                  ? `<div class="card-thumb card-thumb-wide"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;"></div>`
+                  : `<img src="${escapeHtml(item.thumbnail)}" class="card-thumb" style="object-fit:cover;">`))
           : `<div class="card-thumb">${escapeHtml(item.medium)} · ${escapeHtml(item.platform)}</div>`;
 
         card.innerHTML = `
