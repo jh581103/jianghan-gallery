@@ -2,7 +2,9 @@ export async function onRequestPost(context) {
   const { env, request } = context;
   try {
     const body = await request.json();
-    const name = String(body && body.name || '').trim();
+    let name = String(body && body.name || '').trim();
+    // 强制昵称最多 2 字（站长要求所有访客昵称统一为两字）
+    if (name.length > 2) name = name.slice(0, 2);
     let avatar = String(body && body.avatar || '').trim();
     const visitor_id = String(body && body.visitor_id || '').trim();
     if (!name) {
