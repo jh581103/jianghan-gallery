@@ -8566,7 +8566,10 @@
         v = { id: genVisitorId(), name: randomCuteName(), avatar: '' };
         try { localStorage.setItem(GUEST_VISITOR_KEY, JSON.stringify(v)); } catch (e) {}
       }
-      if (!v.avatar) v.avatar = defaultAvatar(v.name);
+      if (!v.avatar || v.avatar.indexOf('data:image/svg') !== 0) {
+        v.avatar = defaultAvatar(v.name);
+        try { localStorage.setItem(GUEST_VISITOR_KEY, JSON.stringify(v)); } catch (e) {}
+      }
       return v;
     }
 
@@ -8635,7 +8638,7 @@
               const showList = list.slice(0, maxTop);
               const remaining = Math.max(0, total - showList.length);
               let html = showList.map(function(g) {
-                const av = g.avatar || defaultAvatar(g.name);
+                const av = pickAvatar(g);
                 return '<img src="' + escapeHtml(av) + '" class="tgb-avatar" alt="' + escapeHtml(g.name) + '" title="' + escapeHtml(g.name) + '">';
               }).join('');
               if (remaining > 0) {
@@ -8650,7 +8653,7 @@
             return;
           }
           container.innerHTML = list.map(g => {
-            const avatar = g.avatar || defaultAvatar(g.name);
+            const avatar = pickAvatar(g);
             const time = formatGuestTime(g.ts);
             const times = (g.visit_count && g.visit_count > 1) ? `<span class="guest-times">🔁 第 ${g.visit_count} 次来</span>` : '';
             return `<div class="guest-item" title="${escapeHtml(g.name)} · ${time}">
@@ -8663,18 +8666,62 @@
         .catch(() => {});
     }
 
-    function defaultAvatar(name) {
-      const char = (name || '?').charAt(0);
-      const canvas = document.createElement('canvas');
-      canvas.width = 64; canvas.height = 64;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#c9a042';
-      ctx.beginPath(); ctx.arc(32, 32, 32, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(char, 32, 32);
-      return canvas.toDataURL();
+    // 字符串哈希（FNV-1a），用于把昵称稳定地映射成“随机”性别/配色
+    function hashStr(s) {
+      s = String(s || '');
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+
+    // 由昵称稳定推导性别：识别不出男女就按昵称“随机”取男/女（同昵称恒定，避免每次刷新变脸）
+    function genderFromName(name) {
+      return (hashStr(name) % 2 === 0) ? 'm' : 'f';
+    }
+
+    // 生成男生/女生头部头像（内联 SVG，比纯圆圈更生动）
+    function makeHeadAvatar(gender, seed) {
+      const h = hashStr(seed);
+      const skin = ['#FAD2B0', '#F2C19A', '#E8AE83', '#D89B6B', '#C98A57'][h % 5];
+      const hair = ['#2C2C2C', '#4A3526', '#6B4423', '#1C1C1C', '#7A5230', '#3A2A1F', '#5A3825'][(h >>> 3) % 7];
+      const bg = ['#FFE3EC', '#DCE9FF', '#E2F7DA', '#FFF1CF', '#ECE0FF', '#FFE6D2', '#D4F1FF', '#FDE2F3'][(h >>> 6) % 8];
+      const clothM = ['#6C8EBF', '#7FB069', '#5BA3A8', '#8E7CC3', '#C08552'];
+      const clothF = ['#E58FA6', '#79C2C9', '#B58FD4', '#F2A65A', '#8FB98F'];
+      const cloth = (gender === 'm' ? clothM : clothF)[(h >>> 9) % 5];
+      const isM = gender === 'm';
+      const eyes = '<circle cx="26" cy="30" r="1.9" fill="#3a2b22"/><circle cx="38" cy="30" r="1.9" fill="#3a2b22"/>';
+      const mouth = '<path d="M28 36 Q32 39 36 36" stroke="#C0685A" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+      const hairSvg = isM
+        ? '<path d="M16 29 Q15 9 32 9 Q49 9 48 29 Q44 18 32 17 Q20 18 16 29 Z" fill="' + hair + '"/>'
+        : '<path d="M15 30 Q14 7 32 7 Q50 7 49 30 L49 45 Q47 47 45 45 L45 31 Q45 17 32 16 Q19 17 19 31 L19 45 Q17 47 15 45 Z" fill="' + hair + '"/>';
+      const svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>" +
+          "<circle cx='32' cy='32' r='32' fill='" + bg + "'/>" +
+          "<path d='M11 64 C11 51 22 47 32 47 C42 47 53 51 53 64 Z' fill='" + cloth + "'/>" +
+          "<circle cx='32' cy='29' r='15' fill='" + skin + "'/>" +
+          "<circle cx='16' cy='31' r='3.4' fill='" + skin + "'/>" +
+          "<circle cx='48' cy='31' r='3.4' fill='" + skin + "'/>" +
+          hairSvg +
+          eyes +
+          mouth +
+        "</svg>";
+      return 'data:image/svg+xml,' + encodeURIComponent(svg);
+    }
+
+    // 取来访头像：微信外链真实头像/新SVG头像保留；旧的金币圆圈头像 → 按性别重新生成头部头像
+    function pickAvatar(g) {
+      const av = g && g.avatar;
+      if (av && /^https?:\/\//.test(av)) return av;
+      if (av && av.indexOf('data:image/svg') === 0) return av;
+      return defaultAvatar((g && g.name) || '?');
+    }
+
+    function defaultAvatar(name, gender) {
+      const g = gender || genderFromName(name);
+      return makeHeadAvatar(g, name);
     }
 
     function formatGuestTime(ts) {
