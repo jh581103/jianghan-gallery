@@ -8222,7 +8222,7 @@
             });
             b.style.background = '#e8f0fe'; b.style.borderColor = '#4a90e2'; b.style.color = '#1a73e8'; b.style.fontWeight = '600';
             // 调速即时生效：如果正在朗读则重启以应用新语速（按当前全文目标重读）
-            if (ttsUtterance) { ttsHighlightSpans = ttsSpans; speakText(text, onTTSend); }
+            if (ttsUtterance) { ttsHighlightSpans = ttsSpans; speakText(rawText, onTTSend); }
           };
           speedWrap.appendChild(b);
         });
@@ -8242,7 +8242,7 @@
           } else {
             // 未开始或已结束：从头朗读全文
             ttsHighlightSpans = ttsSpans;
-            speakText(text, onTTSend);
+            speakText(rawText, onTTSend);
             toggleBtn.textContent = '暂停';
           }
         };
@@ -8275,7 +8275,7 @@
 
       if (autoplay) {
         toggleBtn.textContent = '暂停';
-        speakText(text, onTTSend);
+        speakText(rawText, onTTSend);
       } else {
         toggleBtn.textContent = '朗读';
       }
