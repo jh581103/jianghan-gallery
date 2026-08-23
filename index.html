@@ -835,26 +835,26 @@
     .guest-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
       justify-content: center;
     }
     .guest-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      width: 72px;
+      gap: 3px;
+      width: 46px;
     }
     .guest-avatar {
-      width: 56px;
-      height: 56px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid rgba(201, 160, 66, 0.35);
+      border: 1.5px solid rgba(201, 160, 66, 0.35);
       background: rgba(255,255,255,0.08);
     }
     .guest-name {
-      font-size: 12px;
+      font-size: 10px;
       color: #e6d9c0;
       text-align: center;
       max-width: 100%;
@@ -863,12 +863,12 @@
       white-space: nowrap;
     }
     .guest-times {
-      font-size: 10px;
+      font-size: 9px;
       color: #c9a042;
       text-align: center;
-      margin-top: 3px;
+      margin-top: 1px;
       display: inline-block;
-      padding: 1px 7px;
+      padding: 1px 5px;
       border: 1px solid rgba(201, 160, 66, 0.45);
       border-radius: 11px;
       background: rgba(201, 160, 66, 0.14);
@@ -991,11 +991,11 @@
       overflow: hidden;
     }
     .tgb-avatar {
-      width: 30px;
-      height: 30px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid rgba(201, 160, 66, 0.4);
+      border: 1.5px solid rgba(201, 160, 66, 0.4);
       background: rgba(255,255,255,0.08);
       flex: 0 0 auto;
     }
@@ -8475,9 +8475,8 @@
     }
 
     function randomCuteName() {
-      const a = ['悠然','微光','听风','拾光','清欢','南风','星河','半山','浅夏','云栖','初见','知秋','向暖','归舟','拾贰','木棉','远舟','小满','谷雨','白露'];
-      const b = ['的云','的信笺','的树','的猫','的灯','的行者','的旅人','的歌','的书','的画','的风','的月','的溪','的萤火','的舟','的鹿'];
-      return a[Math.floor(Math.random()*a.length)] + b[Math.floor(Math.random()*b.length)];
+      const names = ['悠然','微光','听风','拾光','清欢','南风','星河','半山','浅夏','云栖','初见','知秋','向暖','归舟','拾贰','木棉','远舟','小满','谷雨','白露','半影','溪亭','云舟','鹿鸣','鹤归','松烟','墨白','青梧','枕石','知遥','归雁','听松','望月','折柳','问樵','踏雪','寻梅','煮雪','烹茶','临风','倚竹','卧云','泛舟','种月','锄云','拾穗','捕萤','听雨','观澜','煎茶','酿酒','题叶','刻舟','牧云','耕烟'];
+      return names[Math.floor(Math.random()*names.length)];
     }
 
     // 取/生成本机访客身份（稳定，按浏览器）
