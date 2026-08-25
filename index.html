@@ -1103,10 +1103,10 @@
     
     <!-- 顶部精简访客条 -->
     <div class="top-guest-bar" id="topGuestBar" style="display:none;">
-      <span class="tgb-icon">👥</span>
+      <span class="tgb-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 24" width="22" height="13" fill="#c9a042" style="display:inline-block;vertical-align:middle;"><circle cx="10" cy="8" r="5"/><path d="M1 24 c0-6 4-9 9-9 s9 3 9 9 z"/><circle cx="30" cy="8" r="5"/><path d="M21 24 c0-6 4-9 9-9 s9 3 9 9 z"/></svg></span>
       <span class="tgb-text">累计 <em id="tgbTotal">0</em> 人来访</span>
       <div class="tgb-avatars" id="tgbAvatars"></div>
-      <a class="tgb-more" href="#guestWall" onclick="try{document.getElementById('guestWall').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}return false;">查看全部 ↓</a>
+      
     </div>
 
     <!-- 顶部分区导航 -->
@@ -1185,7 +1185,7 @@
 
     <!-- 悬浮：来访/顶部 切换 -->
     <button class="float-guest-btn" id="floatGuestBtn" type="button" title="来访/顶部" aria-label="来访或回到顶部"
-      onclick="(function(){var wall=document.getElementById('guestWall');var btn=document.getElementById('floatGuestBtn');var lbl=btn?btn.querySelector('.fgb-label'):null;if(!wall)return;var near=(window.innerHeight+window.scrollY)>=(document.body.scrollHeight-180);if(near){window.scrollTo({top:0,behavior:'smooth'});if(lbl)lbl.textContent='来访';}else{wall.scrollIntoView({behavior:'smooth',block:'start'});if(lbl)lbl.textContent='顶部';}})()">👥<span class="fgb-label">来访</span></button>
+      onclick="(function(){var wall=document.getElementById('guestWall');var btn=document.getElementById('floatGuestBtn');var lbl=btn?btn.querySelector('.fgb-label'):null;if(!wall)return;var near=(window.innerHeight+window.scrollY)>=(document.body.scrollHeight-180);if(near){window.scrollTo({top:0,behavior:'smooth'});if(lbl)lbl.textContent='来访';}else{wall.scrollIntoView({behavior:'smooth',block:'start'});if(lbl)lbl.textContent='顶部';}})()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 24" width="18" height="11" fill="#ffffff" style="display:inline-block;vertical-align:middle;"><circle cx="10" cy="8" r="5"/><path d="M1 24 c0-6 4-9 9-9 s9 3 9 9 z"/><circle cx="30" cy="8" r="5"/><path d="M21 24 c0-6 4-9 9-9 s9 3 9 9 z"/></svg><span class="fgb-label">来访</span></button>
 
     <!-- 详情页 -->
     <div class="detail-page" id="detailPage" style="display:none;">
