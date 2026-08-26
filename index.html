@@ -9022,23 +9022,34 @@
       try { sent = JSON.parse(localStorage.getItem(SENT_KEY) || '{}'); } catch (e) { sent = {}; }
 
       // 批量拉取所有作品的当前真实播放量
+      // 注意：必须分批请求！一次性传入全部作品 id 会让后端 play.js 把 id 全塞进
+      // IN (?,?,...) 的 SQL，变量数超出 D1/SQLite 上限（实测约 100~200 个即报错），
+      // 导致整批请求失败、所有卡片兜底显示成 0。每批 50 个可彻底避开该上限。
       const workIds = Array.from(elements).map(el => el.dataset.workId).filter(Boolean);
       if (workIds.length > 0) {
-        fetch('/api/play?work_ids=' + workIds.join(','))
-          .then(r => r.json())
-          .then(counts => {
-            elements.forEach(el => {
-              const id = el.dataset.workId;
-              const count = (counts && counts[id]) || 0;
-              const numEl = el.querySelector('.view-num');
-              if (numEl) numEl.textContent = count;
-              el.classList.remove('loading');
-              el.classList.add('loaded');
-            });
-          })
-          .catch(() => {
-            elements.forEach(el => el.classList.add('error'));
+        const BATCH = 50;
+        const batches = [];
+        for (let i = 0; i < workIds.length; i += BATCH) {
+          batches.push(workIds.slice(i, i + BATCH));
+        }
+        Promise.all(batches.map(ids =>
+          fetch('/api/play?work_ids=' + ids.join(','))
+            .then(r => r.json())
+            .catch(() => ({}))
+        )).then(results => {
+          const counts = {};
+          results.forEach(res => { if (res && !res.error) Object.assign(counts, res); });
+          elements.forEach(el => {
+            const id = el.dataset.workId;
+            const count = (counts && counts[id]) || 0;
+            const numEl = el.querySelector('.view-num');
+            if (numEl) numEl.textContent = count;
+            el.classList.remove('loading');
+            el.classList.add('loaded');
           });
+        }).catch(() => {
+          elements.forEach(el => el.classList.add('error'));
+        });
       }
 
       // 卡片进入视窗 20% 时上报一次真实播放（同一会话内每张卡片只数一次）
