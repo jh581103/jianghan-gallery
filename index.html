@@ -991,11 +991,11 @@
       font-size: 17px;
     }
     .tgb-visit-btn {
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 3px 9px; border: none; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 2px;
+      padding: 2px 7px; border: none; border-radius: 999px;
       background: linear-gradient(135deg, #c9a042, #d8b85a);
-      color: #2a1d0a; font-size: 12px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25); line-height: 1;
+      color: #2a1d0a; font-size: 11px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25); line-height: 1;
     }
     .tgb-visit-btn:hover { transform: translateY(-1px); }
     .tgb-visit-btn .fgb-label { line-height: 1; font-size: 12px; }
@@ -1117,7 +1117,7 @@
     <!-- 顶部精简访客条 -->
     <div class="top-guest-bar" id="topGuestBar" style="display:none;">
       <span class="tgb-text">累计</span>
-      <button class="tgb-visit-btn" id="tgbVisitBtn" type="button" title="来访/顶部" aria-label="来访或回到顶部" onclick="(function(){var wall=document.getElementById('guestWall');var btn=document.getElementById('tgbVisitBtn');var lbl=btn?btn.querySelector('.fgb-label'):null;if(!wall)return;var near=(window.innerHeight+window.scrollY)>=(document.body.scrollHeight-180);if(near){window.scrollTo({top:0,behavior:'smooth'});if(lbl)lbl.textContent='来访';}else{wall.scrollIntoView({behavior:'smooth',block:'start'});if(lbl)lbl.textContent='顶部';}})()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 24" width="18" height="11" fill="#ffffff" style="display:inline-block;vertical-align:middle;"><circle cx="10" cy="8" r="5"/><path d="M1 24 c0-6 4-9 9-9 s9 3 9 9 z"/><circle cx="30" cy="8" r="5"/><path d="M21 24 c0-6 4-9 9-9 s9 3 9 9 z"/></svg><span class="fgb-label">来访</span></button>
+      <button class="tgb-visit-btn" id="tgbVisitBtn" type="button" title="来访/顶部" aria-label="来访或回到顶部" onclick="(function(){var wall=document.getElementById('guestWall');var btn=document.getElementById('tgbVisitBtn');var lbl=btn?btn.querySelector('.fgb-label'):null;if(!wall)return;var near=(window.innerHeight+window.scrollY)>=(document.body.scrollHeight-180);if(near){window.scrollTo({top:0,behavior:'smooth'});if(lbl)lbl.textContent='来访';}else{wall.scrollIntoView({behavior:'smooth',block:'start'});if(lbl)lbl.textContent='顶部';}})()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 24" width="12" height="14" fill="#ffffff" style="display:inline-block;vertical-align:middle;"><circle cx="10" cy="8" r="5"/><path d="M1 24 c0-6 4-9 9-9 s9 3 9 9 z"/></svg><span class="fgb-label">来访</span></button>
       <span class="tgb-count"><em id="tgbTotal">0</em></span>
       <span class="tgb-text">人</span>
       <div class="tgb-avatars" id="tgbAvatars"></div>
