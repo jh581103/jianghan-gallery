@@ -9072,32 +9072,32 @@
 
 <style id="shareWidgetStyle">
 #shareFloat {
-  position: fixed; right: 16px; bottom: 16px; z-index: 9999;
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(20,16,12,0.92); color: #f0e6d2;
-  border: 1px solid #c8a96a; border-radius: 999px;
-  padding: 9px 15px; font-size: 14px; cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.45); user-select: none;
+  position: fixed; right: 10px; bottom: 10px; z-index: 100;
+  display: flex; align-items: center; gap: 3px;
+  background: rgba(20,16,12,0.75); color: #f0e6d2;
+  border: 1px solid rgba(200,169,106,0.6); border-radius: 999px;
+  padding: 5px 9px; font-size: 12px; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3); user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
-#shareFloat:hover { background: rgba(40,30,20,0.96); }
+#shareFloat:hover { background: rgba(40,30,20,0.88); }
 #shareFloat .cnt { color: #c8a96a; font-weight: 600; }
-#shareFloat .tip { font-size: 12px; opacity: 0.8; }
 </style>
 <div id="shareFloat" title="分享这个网站">
-  <span>🔗 分享</span>
-  <span class="cnt" id="shareCnt">…</span>
+  <span>🔗</span>
+  <span class="cnt" id="shareCnt">0</span>
 </div>
 <script>
 (function(){
   var KEY = '/api/share';
   var btn = document.getElementById('shareFloat');
   var cnt = document.getElementById('shareCnt');
-  function setCount(n){ if(cnt) cnt.textContent = '已被分享 ' + (n||0) + ' 次'; }
+  function setCount(n){ if(cnt) cnt.textContent = (n===undefined||n===null?'0':n); }
   function load(){
     fetch(KEY).then(function(r){return r.json();}).then(function(d){
       setCount(d && d.count);
-    }).catch(function(){ if(cnt) cnt.textContent=''; });
+    }).catch(function(){});
   }
   function share(){
     var url = location.href;
@@ -9106,10 +9106,10 @@
       navigator.share({title:title, url:url}).catch(function(){});
     } else if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(url).then(function(){
-        if(cnt) cnt.textContent='链接已复制 ✓';
+        if(cnt) cnt.textContent='✓';
+        setTimeout(load, 800);
       }).catch(function(){});
     }
-    // 计 +1（无论分享方式，点一次按钮算一次分享意图）
     fetch(KEY, {method:'POST'}).then(function(r){return r.json();}).then(function(d){
       setCount(d && d.count);
     }).catch(function(){});
