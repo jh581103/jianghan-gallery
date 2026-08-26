@@ -9123,20 +9123,31 @@
       setCount(d && d.count);
     }).catch(function(){});
   }
+  function recordShare(){
+    fetch(KEY, {method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      setCount(d && d.count);
+    }).catch(function(){});
+  }
   function share(){
     var url = location.href;
     var title = document.title || '江涵发光的蛋糕';
     if(navigator.share){
-      navigator.share({title:title, url:url}).catch(function(){});
+      // 调起系统分享面板，用户真正完成分享后才计数
+      navigator.share({title:title, url:url}).then(function(){
+        recordShare();
+      }).catch(function(){
+        // 用户取消或系统分享失败：不计数
+      });
     } else if(navigator.clipboard && navigator.clipboard.writeText){
+      // 不支持系统分享时复制链接，复制成功后再计数
       navigator.clipboard.writeText(url).then(function(){
         if(cnt) cnt.textContent='✓';
-        setTimeout(load, 800);
+        setTimeout(recordShare, 600);
       }).catch(function(){});
+    } else {
+      // 兜底
+      recordShare();
     }
-    fetch(KEY, {method:'POST'}).then(function(r){return r.json();}).then(function(d){
-      setCount(d && d.count);
-    }).catch(function(){});
   }
   if(btn){ btn.addEventListener('click', share); }
   load();
