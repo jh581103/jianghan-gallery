@@ -967,19 +967,16 @@
     }
     /* 顶部精简访客条 */
     .top-guest-bar {
-      position: fixed; top: 60px; right: 10px; z-index: 100;
       display: none;
       align-items: center;
-      gap: 8px;
-      margin: 0;
-      padding: 6px 10px;
-      background: rgba(20, 14, 8, 0.6);
+      gap: 12px;
+      margin: 4px 0 12px;
+      padding: 10px 18px;
+      background: rgba(20, 14, 8, 0.5);
       border: 1px solid rgba(201, 160, 66, 0.28);
       border-radius: 999px;
       backdrop-filter: blur(6px);
-      flex-wrap: nowrap;
-      max-width: 60vw;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      flex-wrap: wrap;
     }
     .tgb-icon { font-size: 18px; line-height: 1; }
     .tgb-text {
@@ -1036,11 +1033,11 @@
       transition: background 0.2s;
     }
     .tgb-more:hover { background: rgba(201, 160, 66, 0.18); }
-    /* 右下角悬浮“来访”按钮 */
+    /* 右上角悬浮“来访”按钮 */
     .float-guest-btn {
       position: fixed;
-      right: 16px;
-      bottom: 16px;
+      top: 60px;
+      right: 10px;
       z-index: 1500;
       display: flex;
       align-items: center;
@@ -1062,7 +1059,7 @@
     }
     .float-guest-btn .fgb-label { line-height: 1; font-size: 12px; }
     @media (max-width: 600px) {
-      .float-guest-btn { right: 10px; bottom: 12px; padding: 5px 9px; font-size: 12px; gap: 3px; }
+      .float-guest-btn { top: 60px; right: 10px; padding: 5px 9px; font-size: 12px; gap: 3px; }
       .float-guest-btn .fgb-label { font-size: 11px; }
       .top-guest-bar { gap: 8px; padding: 8px 12px; }
       .tgb-text { font-size: 13px; }
