@@ -9069,5 +9069,55 @@
     handleHash();
   </script>
 
+
+<style id="shareWidgetStyle">
+#shareFloat {
+  position: fixed; right: 16px; bottom: 16px; z-index: 9999;
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(20,16,12,0.92); color: #f0e6d2;
+  border: 1px solid #c8a96a; border-radius: 999px;
+  padding: 9px 15px; font-size: 14px; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45); user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+#shareFloat:hover { background: rgba(40,30,20,0.96); }
+#shareFloat .cnt { color: #c8a96a; font-weight: 600; }
+#shareFloat .tip { font-size: 12px; opacity: 0.8; }
+</style>
+<div id="shareFloat" title="分享这个网站">
+  <span>🔗 分享</span>
+  <span class="cnt" id="shareCnt">…</span>
+</div>
+<script>
+(function(){
+  var KEY = '/api/share';
+  var btn = document.getElementById('shareFloat');
+  var cnt = document.getElementById('shareCnt');
+  function setCount(n){ if(cnt) cnt.textContent = '已被分享 ' + (n||0) + ' 次'; }
+  function load(){
+    fetch(KEY).then(function(r){return r.json();}).then(function(d){
+      setCount(d && d.count);
+    }).catch(function(){ if(cnt) cnt.textContent=''; });
+  }
+  function share(){
+    var url = location.href;
+    var title = document.title || '江涵发光的蛋糕';
+    if(navigator.share){
+      navigator.share({title:title, url:url}).catch(function(){});
+    } else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){
+        if(cnt) cnt.textContent='链接已复制 ✓';
+      }).catch(function(){});
+    }
+    // 计 +1（无论分享方式，点一次按钮算一次分享意图）
+    fetch(KEY, {method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      setCount(d && d.count);
+    }).catch(function(){});
+  }
+  if(btn){ btn.addEventListener('click', share); }
+  load();
+})();
+</script>
+
 </body>
 </html>
