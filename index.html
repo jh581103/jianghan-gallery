@@ -4999,7 +4999,7 @@
     {
       id: 7,
       title: "歌声《万里春色满家园》",
-      thumbnail: "歌声《万里春色满家园》.jpg?v=3",
+      thumbnail: "歌声《万里春色满家园》.jpg?v=4",
       description: "江涵自录并后期视频合成",
       url: "https://weixin.qq.com/sph/AYsEdpUnFq",
       tags: ["歌唱声韵","歌声"],
@@ -5203,7 +5203,7 @@
     {
       id: 24,
       title: "歌声《炫镜》",
-      thumbnail: "翻唱歌声《炫镜》.jpg?v=3",
+      thumbnail: "翻唱歌声《炫镜》.jpg?v=4",
       description: "",
       url: "https://weixin.qq.com/sph/AqpovZPLEv",
       tags: ["歌唱声韵","歌声","视频"],
@@ -8055,6 +8055,16 @@
 }
 #backTop.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 #backTop:active { background: rgba(40,30,20,0.9); }
+
+    /* 修复 id<543 旧卡片封面空白边：两首歌封面用原图 16:9 cover 填满 */
+    img.card-thumb[src*="歌声《万里春色满家园》.jpg"],
+    img.card-thumb[src*="翻唱歌声《炫镜》.jpg"] {
+      padding: 0 !important;
+      object-fit: cover !important;
+    }
+    img.card-thumb[src*="翻唱歌声《炫镜》.jpg"] {
+      object-position: 70% center !important;
+    }
 </style>
 <div id="shareFloat" title="分享这个网站">
   <span>🔗</span>
