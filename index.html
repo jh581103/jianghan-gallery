@@ -5011,7 +5011,7 @@
     {
       id: 8,
       title: "歌韵《我爱你中国》",
-      thumbnail: "歌韵《我爱你中国》.jpg",
+      thumbnail: "歌韵《我爱你中国》.jpg?v=2",
       description: "江涵自录并后期合成视频",
       url: "https://weixin.qq.com/sph/A54xePUb1y",
       tags: ["歌唱声韵","歌韵"],
@@ -6881,6 +6881,55 @@
       publishDate: "2026-08-27",
       status: "已发布"
     },
+  
+    {
+      id: 579,
+      title: "歌韵《映山红》",
+      thumbnail: "ysh.jpg",
+      description: "歌韵《映山红》，江涵翻唱，欢迎聆听。",
+      url: "https://weixin.qq.com/sph/Awg9E60WbD",
+      tags: ["歌唱声韵", "歌韵", "视频"],
+      medium: "视频",
+      platform: "视频号",
+      publishDate: "2026-08-29",
+      status: "已发布"
+    },
+    {
+      id: 580,
+      title: "歌韵《中华好明月》",
+      thumbnail: "zhmy2.jpg",
+      description: "歌韵《中华好明月》，江涵翻唱，欢迎聆听。",
+      url: "https://weixin.qq.com/sph/ACgemLMS0Q",
+      tags: ["歌唱声韵", "歌韵", "视频"],
+      medium: "视频",
+      platform: "视频号",
+      publishDate: "2026-08-29",
+      status: "已发布"
+    },
+    {
+      id: 581,
+      title: "歌韵《当我们年轻时光》",
+      thumbnail: "wdngsg.jpg",
+      description: "歌韵《当我们年轻时光》，江涵翻唱，欢迎聆听。",
+      url: "https://weixin.qq.com/sph/AokIp179Qr",
+      tags: ["歌唱声韵", "歌韵", "视频"],
+      medium: "视频",
+      platform: "视频号",
+      publishDate: "2026-08-29",
+      status: "已发布"
+    },
+    {
+      id: 582,
+      title: "歌韵《永远的花样年华》",
+      thumbnail: "yydhnh.jpg",
+      description: "歌韵《永远的花样年华》，江涵翻唱，欢迎聆听。",
+      url: "https://weixin.qq.com/sph/AQNh9Slsin",
+      tags: ["歌唱声韵", "歌韵", "视频"],
+      medium: "视频",
+      platform: "视频号",
+      publishDate: "2026-08-29",
+      status: "已发布"
+    },
   ];
 
     // === 作品总数 + 分类统计（自动从 works.length 取，每次录新作品后刷新即更新） ===
@@ -7194,7 +7243,7 @@
         const tagsHTML = item.tags.map(t => `<span class="card-tag">#${escapeHtml(t)}</span>`).join('');
         const viewCountHTML = `<span class="view-count loading" data-work-id="${item.id}"><span class="view-icon">👁</span><span class="view-num">—</span></span>`;
         const isAudio = item.medium === '音频';
-        const isWideThumb = item.id >= 543 || [7, 24].includes(item.id);
+        const isWideThumb = item.id >= 543 || [7, 8, 24].includes(item.id);
         const wideCls = isWideThumb ? ' card-thumb-wide' : '';
         const thumbHTML = item.thumbnail
           ? (isAudio
