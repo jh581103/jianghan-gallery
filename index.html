@@ -1080,6 +1080,14 @@
   </style>
 </head>
 <body>
+<!-- B站视频播放浮层 -->
+<div id="bilibiliModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2001;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+  <div style="background:#000;border-radius:12px;max-width:960px;width:100%;max-height:90vh;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <button onclick="closeBilibiliModal()" style="position:absolute;top:8px;right:12px;font-size:28px;border:none;background:none;cursor:pointer;line-height:1;color:#fff;z-index:10;text-shadow:0 1px 4px rgba(0,0,0,0.8);">&times;</button>
+    <div id="bilibiliModalContent" style="width:100%;aspect-ratio:16/9;position:relative;background:#000;"></div>
+  </div>
+</div>
+
 <!-- 音频播放浮层 -->
 <div id="audioModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
   <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:24px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
@@ -1240,6 +1248,18 @@
   <script>
     // === Mock 数据（之后从飞书多维表格拉）===
     const works = [
+    {
+      id: 588,
+      title: "中华五千年之远古：盘古出世天地分",
+      thumbnail: "pangu.jpg",
+      description: "读史使人明智，从盘古出世、天地初分聊起，串起中华五千年历史开篇。",
+      url: "https://www.bilibili.com/video/BV1QJ411p78p/",
+      tags: ["读悟","历史","视频"],
+      medium: "视频",
+      platform: "B站",
+      publishDate: "2026-09-09",
+      status: "已发布"
+    },
     {
       id: 569,
       title: "歌韵《不要惦记家》",
@@ -7223,6 +7243,36 @@
       });
     }
 
+    function isBilibiliUrl(url) {
+      return /bilibili\.com\/video\/(BV\w+)/i.test(url) || /^https?:\/\/b23\.tv\/\w+/i.test(url);
+    }
+    function getBilibiliBvid(url) {
+      const m = url.match(/bilibili\.com\/video\/(BV\w+)/i);
+      if (m) return m[1];
+      return null;
+    }
+    function openBilibiliModal(work) {
+      const url = work.externalUrl || work.url;
+      const bvid = getBilibiliBvid(url);
+      const c = document.getElementById('bilibiliModalContent');
+      if (!bvid) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      c.innerHTML = `<iframe src="https://player.bilibili.com/player.html?bvid=${bvid}&page=1&high_quality=1&danmaku=0&autoplay=1" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allowfullscreen allow="autoplay; fullscreen"></iframe>`;
+      document.getElementById('bilibiliModal').style.display = 'flex';
+    }
+    function closeBilibiliModal() {
+      document.getElementById('bilibiliModal').style.display = 'none';
+      document.getElementById('bilibiliModalContent').innerHTML = '';
+    }
+    const bilibiliModalEl = document.getElementById('bilibiliModal');
+    if (bilibiliModalEl) {
+      bilibiliModalEl.addEventListener('click', e => {
+        if (e.target.id === 'bilibiliModal') closeBilibiliModal();
+      });
+    }
+
     // === 渲染首页作品流 ===
     function renderGallery() {
       const search = document.getElementById('searchBox').value.toLowerCase().trim();
@@ -7280,11 +7330,20 @@
             openAudioModal(item);
           });
         } else if (externalUrl && externalUrl !== '') {
-          // 抖音等外链：所有平台都走网页版（抖音分享页内再点"打开抖音"按钮唤起 App）
-          card.href = externalUrl;
-          card.target = '_blank';
-          card.rel = 'noopener noreferrer';
-          card.referrerPolicy = 'no-referrer';
+          if (isBilibiliUrl(externalUrl)) {
+            // B站视频：站内弹 iframe 直接播放，不用跳回 B站
+            card.href = 'javascript:void(0)';
+            card.addEventListener('click', e => {
+              e.preventDefault();
+              openBilibiliModal(item);
+            });
+          } else {
+            // 抖音等外链：所有平台都走网页版（抖音分享页内再点"打开抖音"按钮唤起 App）
+            card.href = externalUrl;
+            card.target = '_blank';
+            card.rel = 'noopener noreferrer';
+            card.referrerPolicy = 'no-referrer';
+          }
         } else if (item.medium === '文字') {
           card.href = '#work-' + item.id;
           card.addEventListener('click', e => {
@@ -7304,13 +7363,15 @@
         const tagsHTML = item.tags.map(t => `<span class="card-tag">#${escapeHtml(t)}</span>`).join('');
         const viewCountHTML = `<span class="view-count loading" data-work-id="${item.id}"><span class="view-icon">👁</span><span class="view-num">—</span></span>`;
         const isAudio = item.medium === '音频';
+        const isBilibili = isBilibiliUrl(externalUrl || '');
+        const bilibiliOverlay = `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.28);"><div style="width:50px;height:50px;border-radius:50%;background:rgba(251,114,153,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.35);color:#fff;font-size:20px;padding-left:4px;">▶</div></div><div style="position:absolute;bottom:6px;left:6px;padding:2px 6px;background:rgba(251,114,153,0.9);border-radius:4px;color:#fff;font-size:11px;line-height:1.4;">B站</div>`;
         const isWideThumb = item.id >= 543 || [7, 8, 24].includes(item.id);
         const wideCls = isWideThumb ? ' card-thumb-wide' : '';
         const thumbHTML = item.thumbnail
           ? (isAudio
               ? `<div class="card-thumb${wideCls}" style="position:relative;"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;">${item.duration ? `<div style="position:absolute;bottom:6px;left:6px;padding:2px 6px;background:rgba(0,0,0,0.55);border-radius:4px;color:#fff;font-size:11px;line-height:1.4;text-shadow:0 1px 2px rgba(0,0,0,0.4);">${escapeHtml(item.duration)}</div>` : ''}<div style="position:absolute;bottom:6px;right:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);border-radius:50%;color:#fff;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,0.4);box-shadow:0 1px 4px rgba(0,0,0,0.2);">▶</div></div>`
               : (isWideThumb
-                  ? `<div class="card-thumb card-thumb-wide"><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;"></div>`
+                  ? `<div class="card-thumb card-thumb-wide"${isBilibili ? ' style="position:relative;"' : ''}><img src="${escapeHtml(item.thumbnail)}" style="width:100%;height:100%;object-fit:cover;">${isBilibili ? bilibiliOverlay : ''}</div>`
                   : `<img src="${escapeHtml(item.thumbnail)}" class="card-thumb" style="object-fit:cover;">`))
           : `<div class="card-thumb">${escapeHtml(item.medium)} · ${escapeHtml(item.platform)}</div>`;
 
