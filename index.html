@@ -7458,7 +7458,7 @@
               openBilibiliModal(item);
             });
           } else if (item.platform === '贴图号') {
-            // 贴图号作品：站内打开详情页，展示封面图 + 文字，并自动朗读；详情页保留"在贴图号打开"外链按钮
+            // 贴图号作品：站内打开详情页，展示封面图 + 文字，并自动朗读；详情页外链按钮文案为「点此看图」
             card.href = '#work-' + item.id;
             card.addEventListener('click', e => {
               e.preventDefault();
@@ -7907,6 +7907,9 @@
         cta.href = workUrl;
         if (work.medium === '音频') {
           ctaText.textContent = '播放音频';
+        } else if (work.platform === '贴图号') {
+          // 贴图号作品：按钮文案改为「点此看图」
+          ctaText.textContent = '点此看图';
         } else {
           ctaText.textContent = `在 ${work.platform} 打开`;
         }
