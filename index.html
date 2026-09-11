@@ -7457,6 +7457,14 @@
               e.preventDefault();
               openBilibiliModal(item);
             });
+          } else if (item.platform === '贴图号') {
+            // 贴图号作品：站内打开详情页，展示封面图 + 文字，并自动朗读；详情页保留"在贴图号打开"外链按钮
+            card.href = '#work-' + item.id;
+            card.addEventListener('click', e => {
+              e.preventDefault();
+              showDetail(item.id, true);
+              history.replaceState(null, '', '#work-' + item.id);
+            });
           } else {
             // 抖音等外链：所有平台都走网页版（抖音分享页内再点"打开抖音"按钮唤起 App）
             card.href = externalUrl;
@@ -7849,7 +7857,7 @@
       
       const descEl = document.getElementById('detailDesc');
       // 文字作品：一律按字符渲染（供朗读高亮）；非文字作品走原有逻辑
-      const isTextWork = (work.medium === '文字' && work.description);
+      const isTextWork = ((work.medium === '文字') || (work.platform === '贴图号')) && work.description;
       if (!isTextWork) {
         if (work.description) {
           const descText = (work.medium === '文字')
