@@ -1249,6 +1249,19 @@
     // === Mock 数据（之后从飞书多维表格拉）===
     const works = [
   {
+    id: 605,
+    title: "红色寻脉【15】：延安黄陵之旅总结",
+    thumbnail: "hongse15.jpg",
+    description: "延安黄陵之行圆满结束。从宝塔山到杨家岭，从枣园到黄帝陵，每一处都铭刻着历史的回响与文明的传承。此行不仅是一次红色之旅，更是一场穿越时空的精神洗礼。",
+    url: "https://mp.weixin.qq.com/s/TLLfHNDWw-svgEnutgfvkg",
+    tags: ["旅游", "贴图", "图片", "文字", "常识", "历史"],
+    medium: "图片",
+    platform: "贴图号",
+    publishDate: "2026-09-11",
+    status: "已发布"
+  },
+
+  {
     id: 604,
     title: "文明溯源【14】参观黄帝手植柏",
     thumbnail: "wmsy14.jpg",
@@ -7532,7 +7545,7 @@
               openBilibiliModal(item);
             });
           } else if (item.platform === '贴图号') {
-            // 贴图号作品：站内打开详情页，展示封面图 + 文字，并自动朗读；详情页外链按钮文案为「点此看图」
+            // 贴图号作品：站内打开详情页，展示封面图 + 文字，并自动朗读；详情页外链按钮文案为「详情点此」
             card.href = '#work-' + item.id;
             card.addEventListener('click', e => {
               e.preventDefault();
@@ -7982,8 +7995,8 @@
         if (work.medium === '音频') {
           ctaText.textContent = '播放音频';
         } else if (work.platform === '贴图号') {
-          // 贴图号作品：按钮文案改为「点此看图」
-          ctaText.textContent = '点此看图';
+          // 贴图号作品：按钮文案改为「详情点此」
+          ctaText.textContent = '详情点此';
         } else {
           ctaText.textContent = `在 ${work.platform} 打开`;
         }
